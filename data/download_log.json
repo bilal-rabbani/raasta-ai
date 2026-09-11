@@ -1,0 +1,82 @@
+[
+  {
+    "source_id": "nadra_home",
+    "status": "http_error",
+    "url": "https://www.nadra.gov.pk/",
+    "http_status": 403,
+    "error": "403 Client Error: Forbidden for url: https://www.nadra.gov.pk/"
+  },
+  {
+    "source_id": "pec_faqs",
+    "status": "http_error",
+    "url": "https://www.pec.org.pk/faqs/",
+    "http_status": 403,
+    "error": "403 Client Error: Forbidden for url: https://www.pec.org.pk/faqs/"
+  },
+  {
+    "source_id": "pec_home",
+    "status": "http_error",
+    "url": "https://www.pec.org.pk/",
+    "http_status": 403,
+    "error": "403 Client Error: Forbidden for url: https://www.pec.org.pk/"
+  },
+  {
+    "source_id": "pec_coportal",
+    "status": "already_exists",
+    "url": "https://coportal.pec.org.pk/",
+    "file": "data/raw/pec_coportal.html"
+  },
+  {
+    "source_id": "pec_registration_policy_2024",
+    "status": "already_exists",
+    "url": "https://www.pec.org.pk/wp-content/uploads/2024/09/Updated-Registration-Policy-July-30-2024.pdf",
+    "file": "data/raw/pec_registration_policy_2024.pdf"
+  },
+  {
+    "source_id": "secp_home",
+    "status": "already_exists",
+    "url": "https://www.secp.gov.pk/",
+    "file": "data/raw/secp_home.html"
+  },
+  {
+    "source_id": "punjab_ppra",
+    "status": "already_exists",
+    "url": "https://ppra.punjab.gov.pk/",
+    "file": "data/raw/punjab_ppra.html"
+  },
+  {
+    "source_id": "kpra_home",
+    "status": "timeout",
+    "url": "https://kpra.kp.gov.pk/",
+    "error": "HTTPSConnectionPool(host='kpra.kp.gov.pk', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7de15b4d4690>, 'Connection to kpra.kp.gov.pk timed out. (connect timeout=60)'))"
+  },
+  {
+    "source_id": "balochistan_procurement_rules_2016",
+    "status": "already_exists",
+    "url": "https://rspn.org/wp-content/uploads/2016/12/BB-Balochistan-Public-Procurement-Rules.pdf",
+    "file": "data/raw/balochistan_procurement_rules_2016.pdf"
+  },
+  {
+    "source_id": "balochistan_bpptwo_unverified",
+    "status": "unverified_skipped",
+    "url": "https://bpptwo.vdc.services:5451/"
+  },
+  {
+    "source_id": "sindh_ppra",
+    "status": "ssl_error",
+    "url": "https://e.pprasindh.gov.pk/",
+    "error": "HTTPSConnectionPool(host='e.pprasindh.gov.pk', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1032)')))"
+  },
+  {
+    "source_id": "kp_registrar_firms",
+    "status": "already_exists",
+    "url": "https://business.kp.gov.pk/registrar-of-firms",
+    "file": "data/raw/kp_registrar_firms.html"
+  },
+  {
+    "source_id": "fbr_home",
+    "status": "already_exists",
+    "url": "https://www.fbr.gov.pk/",
+    "file": "data/raw/fbr_home.html"
+  }
+]

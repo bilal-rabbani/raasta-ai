@@ -1,0 +1,542 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PEC- Online COPortal</title>
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="shortcut icon" type="image/x-icon" href="/Content/Images/logo.png" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- Ionicons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">
+    <link href="/Plugins/datatables/dataTables.bootstrap.css" rel="stylesheet" />
+    <!-- Theme style -->
+    <!--<link rel="stylesheet" href="../../dist/css/AdminLTE.min.css">-->
+    <link href="/CSS/portal.css" rel="stylesheet" />  
+    <!-- AdminLTE Skins. Choose a skin from the css/skins
+         folder instead of downloading all of them to reduce the load. -->
+    <link href="/CSS/skins/_all-skins.css" rel="stylesheet" />
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <link rel="stylesheet" href="https://cdn.datatables.net/plug-ins/1.10.15/api/fnReloadAjax.js">
+    
+
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic" />
+    <script src="/bundles/jquery?v=FVs3ACwOLIVInrAl5sdzR2jrCDmVOWFbZMY6g6Q0ulE1"></script>
+
+</head>
+<body style="padding-top:0px; background-color:#FAF7F7;">
+   
+    <div class="row">
+        <div class="col-md-12" style="background-color:#53668E; height:95px; margin-bottom:0px;">
+
+
+            <div class="col-md-1">
+
+
+
+            </div>
+            <div class="col-md-2"></div>
+            <div class="col-md-1">
+
+                <a href="http://www.pec.org.pk/">
+                    <img width="95" src="/Content/images/logoNew.jpg" />
+                </a>
+            </div>
+            <div class="col-md-6">
+                <div class="login-logo" style="margin-right:5% auto; text-align:left; margin-top:10px; ">
+
+                    <p style="margin-bottom:0px; font-size:32px; color:white; font-weight:bold; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">  Pakistan Engineering Council  </p>
+                    <p style="margin-bottom:0px; font-size:28px; color:white; font-weight:bold; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">  Constructor Operator Registration Portal</p>
+                </div>
+
+            </div>
+
+            <div class="col-md-3">
+
+            </div>
+
+
+        </div>
+    </div>
+    <br />
+    
+    
+   
+    <div class="container body-content">
+   
+        
+
+
+<style>
+    a {
+        font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+        a.hover:hover {
+            text-decoration: underline;
+        }
+
+    .textbox-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: left;
+    }
+
+    .icon-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px; /* Adjust as needed */
+        height: 25px;
+    }
+
+    .fa-icon {
+        margin-right: 10px;
+    }
+
+    .text-link {
+        color: black;
+        text-decoration: none;
+        font-size: 17px;
+        display: block;
+    }
+
+    /*.textbox-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }*/
+    .faq-link {
+        color: black;
+        text-decoration: none;
+        font-size: 17px;
+        margin-bottom: 10px; /* Adjust as needed */
+        display: flex;
+        align-items: flex-start; /* Align text to the start */
+        /*height: 50px;*/
+    }
+
+        .faq-link div {
+            margin-left: 10px; /* Adjust as needed */
+            white-space: pre-line; /* Preserve line breaks */
+            justify-content: center;
+            text-indent: -1em;
+            line-height: 1.5;
+            height: 35px;
+            margin-bottom: 5px;
+        }
+
+        .faq-link:hover {
+            text-decoration: none; /* Removed the underline on hover */
+        }
+
+    .view-all-link {
+        color: darkblue;
+        text-decoration: underline;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .password-recover-link, .activation-email-link {
+        font-weight: 600;
+        font-size: 17px;
+        text-decoration: none;
+        color: #337ab7;
+        display: flex;
+        align-items: center;
+        margin-top: 10px; /* Adjust as needed */
+    }
+
+        .password-recover-link .fa,
+        .activation-email-link .fa {
+            font-size: 17px; /* Set the same font size for both icons */
+            margin-right: 10px; /* Adjust as needed for the spacing */
+        }
+
+    .login-box-msg {
+        font-size: 20px;
+        text-align: center;
+        color: #252522;
+        margin-bottom:-27px;
+    }
+
+    h2 {
+        color: orangered;
+    }
+
+    .custom-text {
+        font-size: 26px;
+        color: black;
+    }
+
+    .sign-up {
+        color: #1E5F35;
+        font-weight: bold;
+    }
+
+
+    .sign-up,
+    .sign-in {
+        color: #1E5F35;
+        font-weight: bold;
+    }
+    .form-group has-feedback{
+        margin-bottom:-27px;
+    }
+</style>
+<body id="grad1" class="hold-transition login-page" style="color:black;">
+    <div id="divWarningBox" style="display:none" class="notify notify-yellow"><span class="symbol icon-excl"></span>Please Use Chrome for best results </div>
+
+
+    <div class="container" style="color:black;  margin-left:-23px;">
+        <div class="callout callout-blue" style="background-color:#ddd !important;display:none;">
+            <h3 style="color:red;">
+                Constructor Operator Portal is temporarily unavailable due to maintenance.
+            </h3>
+            <h4 style="color:red;">
+                System will be available after 10 PM, 13 May 2020 approximately.
+            </h4>
+        </div>
+        <div class="row">
+            <div class="row">
+		<div class="col-md-12 text-center">
+
+                        <a  href="https://www.pec.org.pk/firm-registration/cbe" target="_blank" style="font-size:22px; color:#C51919;padding:20px;text-align:center;">
+                           “Employment Consent” for Engineers, employed by PEC Registered firms?
+                        </a>
+			<br/>
+
+<br/>
+		</div>
+                <div class="col-md-6">
+                    <span class="fa fa-globe" style="font-size:18px; float:right; color:#53668E;">
+                        <a title="Visit PEC Website" href="http://www.pec.org.pk/" target="_blank">
+                            PEC Website
+                        </a>
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <span class="fa fa-check-circle" style="font-size:18px; float:right; color:#53668E;">
+                        <a title="Verification Portal" href="https://verification.pec.org.pk/" target="_blank">
+                            Verification Portal
+                        </a>
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <span class="fa fa-edit" style="font-size:18px; float:right;margin-top:-3px !important; color:#53668E;">
+                        <a title="Log your Complaint about CO Registration Portal" href="https://cms.pec.org.pk/" target="_blank">
+                            Log your Complaint
+                        </a>
+                    </span>
+
+                </div>
+                
+
+
+            </div>
+            <div class="row">
+                <div class="col-md-6" style="display: flex; flex-direction:column; text-align: left; font-family:'Times New Roman '!important;">
+                    <div class="login-box-body" style="font-family:'Times New Roman '!important;border-top: 5px solid #1E5F35;">
+
+
+                        <br />
+                        <a href="/User/Welcome" title="Step-1: Use this link to create an online account" target="_blank">
+                            
+
+                            <h2 class="custom-header">
+                                &nbsp;   <text class="custom-text"><img src="/Content/Images/sign up.png" width="36" height="40" />&nbsp;Create online account!</text>
+                                <span class="sign-up">Sign Up</span>
+                            </h2>
+                        </a>
+
+                        <a href="/User/Index" title="Step-2: Use this link to Sign In and submit your application" target="_blank">
+                            <h2 class="custom-header">
+                                <text class="custom-text"><img src="/Content/Images/1 sign 1.png" width="32" height="30" />&nbsp;&nbsp; Already have user id and password!</text>
+                                <span class="sign-in">Sign In</span>
+                            </h2>
+                            
+                        </a>
+                        <br />
+                        <hr style="width:100%; color:black;" />
+                        
+                        <ul>
+
+                            <a class="password-recover-link" title="Use this link to reset forgotten password" href="/User/ResetPassword" target="_blank">
+                                <i class="fa fa-unlock-alt" style="margin-right: 15px; width: 20px; height: 20px; vertical-align: middle;"></i>
+                                Forgot Password?
+                            </a>
+
+
+                            <a class="activation-email-link" title="Use this link to request account activation email again" href="/User/GetActivationCode" target="_blank">
+                                <i class="fa fa-envelope" style="margin-right: 15px; width: 20px; height: 20px; vertical-align: middle;"></i>
+                                Resend Account-Activation Email
+                            </a>
+
+                        </ul>
+
+
+
+                    </div>
+
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <div class="login-box-body">
+
+                        
+                        <div class="row">
+                            <p class="login-box-msg"><b>Quick Links</b></p>
+                        </div>
+
+
+                        <div class="textbox-wrap focused">
+                            <div class="form-group has-feedback" style="margin-bottom: 13px; margin-top: 18px;">
+
+                                <div style="font-size:18px;">
+                                 <div class="icon-container">
+                                        <i class="fa fa-book text-blue fa-icon" style="font-size: 18px; color: red;"></i>
+                                        <div>
+                                            <a href="https://www.pec.org.pk/firm-registration/cbe" target="_blank" class="text-link">Employment Consent</a>
+                                        </div>
+                                    </div>
+                                    <div class="icon-container">
+                                        <i class="fa fa-book text-blue fa-icon" style="font-size: 18px;"></i>
+                                        <div>
+                                            <a href="https://www.pec.org.pk/wp-content/uploads/2024/09/Updated-Registration-Policy-July-30-2024.pdf" target="_blank" class="text-link">Registration Policy 2017</a>
+                                        </div>
+                                    </div>
+
+                              
+
+                                    <div class="icon-container">
+                                        <i class="fa fa-address-book text-blue fa-icon" style="font-size: 18px;"></i>
+                                        <div>
+                                            <a href="/User/NameCheck" target="_blank" class="text-link">Firm Name Availability</a>
+                                        </div>
+                                    </div>
+
+                                    <div class="icon-container">
+                                        <i class="fa fa-codepen text-blue fa-icon" style="font-size: 18px;"></i>
+                                        <div>
+                                            <a href="/User/Codes" target="_blank" class="text-link">Codes Detail</a>
+                                        </div>
+                                    </div>
+  <div class="icon-container">
+                                        <i class="fa fa-calculator  text-blue fa-icon" style="font-size: 18px;"></i>
+                                        <div>
+                                            <a href="https://pcpcalculator.pec.org.pk/" target="_blank" class="text-link">PCPs Calculator</a>
+                                        </div>
+                                    </div>
+   <div class="icon-container">
+                                        <i class="fa fa-calculator text-blue fa-icon" style="font-size: 18px;"></i>
+                                        <div>
+                                            <a href="https://feecalculator.pec.org.pk/" target="_blank" class="text-link">Fee Calculator</a>
+                                        </div>
+                                    </div>
+                                    <div class="icon-container">
+                                        <i class="fa fa-check-square-o text-blue fa-icon" style="font-size: 18px;"></i>
+                                        <div>
+                                            <a href="/User/CategoryPCPs" target="_blank" class="text-link">PCPs Requirement</a>
+                                        </div>
+                                    </div>
+
+                                 
+                                     <div class="icon-container">
+                                        <i class="fa fa-thumbs-up text-blue fa-icon" style="font-size: 18px;"></i>
+                                        <div>
+                                            <a href="https://pec.org.pk/emp" target="_blank" class="text-link">Biometric Verification & eSahulat</a>
+                                        </div>
+                                    </div>
+                                    <!-- Add more icon-container divs as needed -->
+
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- /.login-box-body -->
+
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <div class="login-box-body">
+                        <div class="row">
+                            <p class="login-box-msg"><b>FAQs</b></p>
+                        </div>
+
+                        
+                        <div class="textbox-wrap focused">
+                            <div class="form-group has-feedback"style="margin-bottom:-26px; margin-top:7px;">
+                                <div style="font-size:17px;">
+                                  
+                                   
+
+                                    <a href="/Miscellaneous/FAQs#3" target="_blank" class="faq-link">
+                                        <div>1. Should I sign up or sign in?</div>
+                                    </a>
+ <a href="/Miscellaneous/FAQs#2" target="_blank" class="faq-link">
+                                        <div>2. Forgot password</div>
+                                    </a>
+  <a href="/Miscellaneous/FAQs#1" target="_blank" class="faq-link">
+                                        <div>3. How to update/replace login email of my account?</div>
+                                    </a>
+
+
+                                    <a href="/Miscellaneous/FAQs#4" target="_blank" class="faq-link">
+                                        <div>4. What are the best practices to submit my online application?</div>
+                                    </a>
+
+                                    <a href="/Miscellaneous/FAQs#11" target="_blank" class="faq-link">
+                                        <div>5. My application status</div>
+                                    </a>
+                                    <p style="align-content:center; padding-bottom:1px;  margin-left: 80px !important; ">
+                                        <a href="/Miscellaneous/FAQs" target="_blank" class="faq-link">View all</a>
+                                    </p>
+                                 
+
+
+                                </div>
+                            </div>
+                        </div>
+                       
+
+                    </div>
+                    <!-- /.login-box-body -->
+
+
+                </div>
+
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <hr style="width:100%; color:darkblue;margin-top: 10px !important;margin-bottom: 10px !important;" />
+                    <b><span style="color :#ff0000;font-size :17px !important;">Note:</span></b>
+                    <right>
+                        <p style="font-size :17px !important; color :black;">
+
+                            Please visit <a href="https://hireengr.pec.org.pk/" target="_blank">
+                                hireengr.pec.org.pk
+                            </a> to search engineer of required experience, relevant discipline and location.
+
+                            <br />
+
+                        </p>
+                    </right>
+
+                    <hr style="width:100%; color:darkblue;margin-top: 10px !important;margin-bottom: 10px !important;" />
+
+                    <center>
+                        
+                        <a class="password-recover-link" title="Log your Complaint about CO Registration Portal" href="https://cms.pec.org.pk/" target="_blank" style="text-align: center; display: block; margin: 0 auto;">
+                            <i class="fa fa-external-link" style="margin-right: 15px; width: 20px; height: 20px; vertical-align: middle;"></i>
+                            Click here for Queries / Complaints
+                        </a>
+
+                    </center>
+                    <hr style="width:100%; color:darkblue; margin-top: 10px !important;margin-bottom: 10px !important;" />
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('.textbox-wrap').click(function (e) {
+            $('div').removeClass('focused');
+            $(this).addClass('focused');
+        });
+
+        var isChromium = window.chrome,
+            vendorName = window.navigator.vendor,
+            isOpera = window.navigator.userAgent.indexOf("OPR") > -1,
+            isIEedge = window.navigator.userAgent.indexOf("Edge") > -1;
+
+        if (isChromium !== null && isChromium !== undefined && vendorName === "Google Inc." && isOpera == false && isIEedge == false) {
+            // is Google chrome
+        } else {
+            // not Google chrome
+            
+            $("#divWarningBox").show();
+        }
+    });
+
+</script>
+
+
+
+      
+        <footer >
+          
+            <center>
+               <a style="color:#53668E"  href="http://www.pec.org.pk">Powered  by  PEC IT Department</a>
+            </center>
+        </footer>
+    </div>
+
+    <script src="/bundles/bootstrap?v=2Fz3B0iizV2NnnamQFrx-NbYJNTFeBJ2GM05SilbtQU1"></script>
+
+
+    
+    <!-- FastClick -->
+    <script src="/Scripts/js/shortcut.js"></script>
+    <script src="/Plugins/fastclick/fastclick.js"></script>
+    <!-- AdminLTE App -->
+    <script src="/dist/js/adminlte.min.js"></script>
+    <!-- AdminLTE for demo purposes -->
+    <script src="/dist/js/demo.js"></script>
+    <script src="/Scripts/ckeditor/ckeditor.js"></script>
+
+    
+</body>
+</html>
+<script type="text/javascript">
+    $(document).ready(function () {
+                var isChromium = window.chrome,
+                    vendorName = window.navigator.vendor,
+                    isOpera = window.navigator.userAgent.indexOf("OPR") > -1,
+                    isIEedge = window.navigator.userAgent.indexOf("Edge") > -1;
+
+                if (isChromium !== null && isChromium !== undefined && vendorName === "Google Inc." && isOpera == false && isIEedge == false) {
+                    // is Google chrome
+                } else {
+                    // not Google chrome
+                    window.location = "/Miscellaneous/NotChrome";
+        }
+
+
+        document.addEventListener("contextmenu", function (e) {
+            e.preventDefault();
+        });
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "F12" || e.keyCode === 123) {
+                e.preventDefault();
+            }
+            if (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J")) {
+                e.preventDefault();
+            }
+            if (e.ctrlKey && e.key === "U") {
+                e.preventDefault();
+            }
+        });
+
+    });
+</script>
+

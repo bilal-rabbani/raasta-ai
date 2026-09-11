@@ -1,0 +1,51 @@
+[
+  {
+    "source_file": "data/raw/balochistan_procurement_rules_2016.pdf",
+    "cleaned_file": "data/cleaned/balochistan_procurement_rules_2016.txt",
+    "status": "success",
+    "characters": 79301,
+    "words": 7098
+  },
+  {
+    "source_file": "data/raw/fbr_home.html",
+    "cleaned_file": "data/cleaned/fbr_home.txt",
+    "status": "success",
+    "characters": 4199,
+    "words": 606
+  },
+  {
+    "source_file": "data/raw/kp_registrar_firms.html",
+    "cleaned_file": "data/cleaned/kp_registrar_firms.txt",
+    "status": "success",
+    "characters": 1612,
+    "words": 227
+  },
+  {
+    "source_file": "data/raw/pec_coportal.html",
+    "cleaned_file": "data/cleaned/pec_coportal.txt",
+    "status": "success",
+    "characters": 1020,
+    "words": 147
+  },
+  {
+    "source_file": "data/raw/pec_registration_policy_2024.pdf",
+    "cleaned_file": "data/cleaned/pec_registration_policy_2024.txt",
+    "status": "success",
+    "characters": 56623,
+    "words": 8427
+  },
+  {
+    "source_file": "data/raw/punjab_ppra.html",
+    "cleaned_file": "data/cleaned/punjab_ppra.txt",
+    "status": "success",
+    "characters": 94,
+    "words": 16
+  },
+  {
+    "source_file": "data/raw/secp_home.html",
+    "cleaned_file": "data/cleaned/secp_home.txt",
+    "status": "success",
+    "characters": 1705,
+    "words": 251
+  }
+]
