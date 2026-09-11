@@ -40,9 +40,14 @@ def mentions_business(text: str) -> bool:
 
 # ============================================================
 # TINY PRACTICE KNOWLEDGE BASE
+# ------------------------------------------------------------
+# Each doc now has an "id" and a "depends_on" list so the
+# Roadmap Agent can build a real ordering, not just
+# mandatory-before-conditional.
 # ============================================================
 KNOWLEDGE_BASE = [
     {
+        "id": "secp_company_reg",
         "institution": "SECP (Securities and Exchange Commission of Pakistan)",
         "title": "Company Registration Overview",
         "url": "https://www.secp.gov.pk/",
@@ -58,8 +63,10 @@ KNOWLEDGE_BASE = [
         "applies_to_structure": ["company"],
         "classification": "mandatory",
         "reason": "Registering as a company legally requires SECP incorporation before the business can operate.",
+        "depends_on": [],  # first step for companies
     },
     {
+        "id": "fbr_ntn",
         "institution": "FBR (Federal Board of Revenue)",
         "title": "National Tax Number (NTN) Registration",
         "url": "https://www.fbr.gov.pk/",
@@ -74,42 +81,11 @@ KNOWLEDGE_BASE = [
         "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
         "classification": "mandatory",
         "reason": "All business structures must have an NTN to file taxes, regardless of size or type.",
+        # a company must be incorporated before it can get its own NTN
+        "depends_on": ["secp_company_reg"],
     },
     {
-        "institution": "Punjab Government - PBIT",
-        "title": "Business Setup Guidance for Punjab",
-        "url": "https://invest.punjab.gov.pk/",
-        "text": (
-            "Businesses setting up in Punjab, including construction-related "
-            "businesses, may need approvals from local development "
-            "authorities depending on the nature and location of the "
-            "business activity."
-        ),
-        "source_type": "Official Government Portal",
-        "verification_status": "Official but date unclear",
-        "publication_date": "Unknown",
-        "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
-        "classification": "conditional",
-        "reason": "This only applies if your specific business activity or location requires local development authority approval.",
-    },
-    {
-        "institution": "PEC (Pakistan Engineering Council)",
-        "title": "Construction Firm Registration",
-        "url": "https://www.pec.org.pk/",
-        "text": (
-            "Construction companies undertaking engineering works in "
-            "Pakistan are generally required to register with the Pakistan "
-            "Engineering Council (PEC) to be eligible for certain "
-            "government and private contracts."
-        ),
-        "source_type": "Official Government Portal",
-        "verification_status": "Verified / Current",
-        "publication_date": "2022-11-05",
-        "applies_to_structure": ["partnership", "company"],
-        "classification": "conditional",
-        "reason": "Required only if you plan to bid on government or PEC-regulated engineering contracts, not for all construction work.",
-    },
-    {
+        "id": "fbr_sole_prop",
         "institution": "FBR (Federal Board of Revenue)",
         "title": "Registering as a Sole Proprietor",
         "url": "https://www.fbr.gov.pk/",
@@ -125,8 +101,49 @@ KNOWLEDGE_BASE = [
         "applies_to_structure": ["sole_proprietorship"],
         "classification": "mandatory",
         "reason": "As a sole proprietor, NTN registration under your own CNIC is the primary legal registration step.",
+        "depends_on": [],
     },
     {
+        "id": "punjab_local_approval",
+        "institution": "Punjab Government - PBIT",
+        "title": "Business Setup Guidance for Punjab",
+        "url": "https://invest.punjab.gov.pk/",
+        "text": (
+            "Businesses setting up in Punjab, including construction-related "
+            "businesses, may need approvals from local development "
+            "authorities depending on the nature and location of the "
+            "business activity."
+        ),
+        "source_type": "Official Government Portal",
+        "verification_status": "Official but date unclear",
+        "publication_date": "Unknown",
+        "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
+        "classification": "conditional",
+        "reason": "This only applies if your specific business activity or location requires local development authority approval.",
+        # needs the business to have its tax registration sorted first
+        "depends_on": ["fbr_ntn", "fbr_sole_prop"],
+    },
+    {
+        "id": "pec_construction_reg",
+        "institution": "PEC (Pakistan Engineering Council)",
+        "title": "Construction Firm Registration",
+        "url": "https://www.pec.org.pk/",
+        "text": (
+            "Construction companies undertaking engineering works in "
+            "Pakistan are generally required to register with the Pakistan "
+            "Engineering Council (PEC) to be eligible for certain "
+            "government and private contracts."
+        ),
+        "source_type": "Official Government Portal",
+        "verification_status": "Verified / Current",
+        "publication_date": "2022-11-05",
+        "applies_to_structure": ["partnership", "company"],
+        "classification": "conditional",
+        "reason": "Required only if you plan to bid on government or PEC-regulated engineering contracts, not for all construction work.",
+        "depends_on": ["fbr_ntn"],
+    },
+    {
+        "id": "chamber_membership",
         "institution": "Punjab Chamber of Commerce",
         "title": "Chamber of Commerce Membership",
         "url": "https://example-lcci.pk/",
@@ -141,8 +158,11 @@ KNOWLEDGE_BASE = [
         "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
         "classification": "optional",
         "reason": "Chamber membership provides business benefits but is not legally required to operate.",
+        "depends_on": [],
     },
 ]
+
+KB_BY_ID = {doc["id"]: doc for doc in KNOWLEDGE_BASE}
 
 # ============================================================
 # EMBEDDING MODEL (cached)
@@ -162,9 +182,6 @@ doc_embeddings = build_embeddings(model)
 
 # ============================================================
 # AGENT 1: INTENT & PROFILE AGENT
-# ------------------------------------------------------------
-# Responsibility: understand the goal, detect if a business is
-# involved, and figure out what's still missing (e.g. structure).
 # ============================================================
 def intent_profile_agent(user_goal: str, business_structure: str = None) -> dict:
     profile = {
@@ -181,9 +198,6 @@ def intent_profile_agent(user_goal: str, business_structure: str = None) -> dict
 
 # ============================================================
 # AGENT 2: GOVERNMENT RESEARCH & RETRIEVAL AGENT
-# ------------------------------------------------------------
-# Responsibility: search the RAG knowledge base and return
-# raw evidence (documents), filtered by known context.
 # ============================================================
 def research_agent(query: str, structure: str = None, top_k: int = 6) -> list:
     query_embedding = model.encode([query])[0]
@@ -205,11 +219,6 @@ def research_agent(query: str, structure: str = None, top_k: int = 6) -> list:
 
 # ============================================================
 # AGENT 3: REQUIREMENT ANALYSIS AGENT
-# ------------------------------------------------------------
-# Responsibility: decide which retrieved evidence is actually
-# applicable and bucket it into mandatory / conditional / optional.
-# (In this practice KB, classification is pre-tagged; a real
-# version would have the LLM reason about applicability here.)
 # ============================================================
 def requirement_agent(evidence: list) -> dict:
     return {
@@ -221,9 +230,6 @@ def requirement_agent(evidence: list) -> dict:
 
 # ============================================================
 # AGENT 4: VERIFICATION AGENT
-# ------------------------------------------------------------
-# Responsibility: check source reliability/freshness and flag
-# anything that shouldn't be presented with full confidence.
 # ============================================================
 WEAK_STATUSES = {"Official but date unclear", "Secondary", "Unverified", "Potentially outdated"}
 
@@ -231,7 +237,7 @@ def verification_agent(requirements: dict) -> dict:
     verified = {"mandatory": [], "conditional": [], "optional": [], "flags": []}
     for bucket in ["mandatory", "conditional", "optional"]:
         for doc in requirements[bucket]:
-            doc = dict(doc)  # don't mutate the shared KB
+            doc = dict(doc)
             if doc["verification_status"] in WEAK_STATUSES:
                 doc["flagged"] = True
                 verified["flags"].append(
@@ -245,47 +251,108 @@ def verification_agent(requirements: dict) -> dict:
 
 
 # ============================================================
-# AGENT 5: ROADMAP AGENT
+# AGENT 5: ROADMAP AGENT  (Part 8 — upgraded)
 # ------------------------------------------------------------
-# Responsibility: turn verified requirements into an ordered
-# sequence of steps, and surface the single "next step".
+# Responsibility: turn verified requirements into a
+# DEPENDENCY-ORDERED sequence (a simple topological sort),
+# attach source backing to every step, and produce a
+# "next step" with a reason, not just a title.
 # ============================================================
-def roadmap_agent(verified: dict) -> dict:
+def _topological_order(docs: list) -> list:
+    """
+    Order docs so that any doc's dependencies (by id) appear
+    before it, using only the ids present in `docs`. Falls back
+    to KB-declaration order for anything with no dependency info.
+    """
+    present_ids = {d["id"] for d in docs}
+    doc_by_id = {d["id"]: d for d in docs}
+
+    ordered = []
+    visited = set()
+    visiting = set()
+
+    def visit(doc_id):
+        if doc_id in visited or doc_id not in present_ids:
+            return
+        if doc_id in visiting:
+            return  # cycle guard — skip rather than crash
+        visiting.add(doc_id)
+        for dep_id in doc_by_id[doc_id]["depends_on"]:
+            visit(dep_id)
+        visiting.discard(doc_id)
+        visited.add(doc_id)
+        ordered.append(doc_by_id[doc_id])
+
+    for doc in docs:
+        visit(doc["id"])
+
+    return ordered
+
+
+def roadmap_agent(verified: dict, business_structure: str = None) -> dict:
+    # Mandatory items form the backbone; conditional items are
+    # woven in wherever their dependencies place them.
+    all_docs = verified["mandatory"] + verified["conditional"]
+    ordered_docs = _topological_order(all_docs)
+
     steps = []
     step_num = 1
 
-    # Mandatory items always come first — they block progress.
-    for doc in verified["mandatory"]:
+    # If we know the structure, make that decision explicit as Step 1
+    # only when it's implied but not itself in the KB (e.g. sole prop
+    # skips SECP, so surfacing the decision keeps the roadmap honest).
+    if business_structure:
         steps.append({
             "number": step_num,
-            "title": doc["title"],
-            "institution": doc["institution"],
-            "status": "pending",
-            "type": "mandatory",
+            "title": f"Confirm business structure: {business_structure.replace('_', ' ').title()}",
+            "institution": "N/A — your decision",
+            "status": "done",  # user already answered this in the UI
+            "type": "decision",
+            "source": None,
+            "depends_on_titles": [],
         })
         step_num += 1
 
-    # Conditional items come next, clearly labeled as "if applicable".
-    for doc in verified["conditional"]:
+    id_to_step_title = {}
+    for doc in ordered_docs:
+        title = doc["title"] if doc["classification"] == "mandatory" else f"{doc['title']} (if applicable)"
+        id_to_step_title[doc["id"]] = title
         steps.append({
             "number": step_num,
-            "title": f"{doc['title']} (if applicable)",
+            "title": title,
             "institution": doc["institution"],
             "status": "pending",
-            "type": "conditional",
+            "type": doc["classification"],
+            "source": {
+                "title": doc["title"],
+                "institution": doc["institution"],
+                "url": doc["url"],
+                "verification_status": doc["verification_status"],
+            },
+            "depends_on_titles": [
+                id_to_step_title.get(dep_id, dep_id) for dep_id in doc["depends_on"]
+                if dep_id in id_to_step_title
+            ],
         })
         step_num += 1
 
-    next_step = steps[0]["title"] if steps else None
+    # Next step = first pending step, with a reason
+    next_step = None
+    for step in steps:
+        if step["status"] == "pending":
+            if step["depends_on_titles"]:
+                dep_text = ", ".join(step["depends_on_titles"])
+                reason = f"This comes next because it depends on: {dep_text}."
+            else:
+                reason = "This has no unmet dependencies, so you can start here."
+            next_step = {"title": step["title"], "reason": reason}
+            break
 
     return {"steps": steps, "next_step": next_step}
 
 
 # ============================================================
 # ORCHESTRATOR
-# ------------------------------------------------------------
-# Responsibility: run the agent pipeline in order and assemble
-# the final state object the UI renders from.
 # ============================================================
 def orchestrator(user_goal: str, business_structure: str = None) -> dict:
     state = {
@@ -301,15 +368,15 @@ def orchestrator(user_goal: str, business_structure: str = None) -> dict:
     state["profile"] = intent_profile_agent(user_goal, business_structure)
 
     if not state["profile"]["in_scope"]:
-        return state  # short-circuit — no need to run research/etc.
+        return state
 
     if state["profile"]["missing"]:
-        return state  # need the user to answer first
+        return state
 
     state["evidence"] = research_agent(user_goal, structure=business_structure)
     state["requirements"] = requirement_agent(state["evidence"])
     state["verified"] = verification_agent(state["requirements"])
-    state["roadmap"] = roadmap_agent(state["verified"])
+    state["roadmap"] = roadmap_agent(state["verified"], business_structure)
     return state
 
 
@@ -339,12 +406,32 @@ def render_roadmap(roadmap: dict):
     if not roadmap["steps"]:
         st.write("No roadmap could be generated for this query.")
         return
+
     for step in roadmap["steps"]:
-        icon = "🔲" if step["type"] == "mandatory" else "◽"
+        if step["type"] == "decision":
+            icon = "✅"
+        elif step["type"] == "mandatory":
+            icon = "🔲"
+        else:
+            icon = "◽"
+
         st.write(f"{icon} **Step {step['number']}: {step['title']}** — {step['institution']}")
 
-    st.subheader("👉 Your Next Step")
-    st.success(roadmap["next_step"])
+        if step["depends_on_titles"]:
+            dep_text = ", ".join(step["depends_on_titles"])
+            st.caption(f"Depends on: {dep_text}")
+
+        if step["source"]:
+            st.caption(
+                f"Source: {step['source']['institution']} — "
+                f"{step['source']['verification_status']} "
+                f"([link]({step['source']['url']}))"
+            )
+
+    if roadmap["next_step"]:
+        st.subheader("👉 Your Next Step")
+        st.success(roadmap["next_step"]["title"])
+        st.caption(roadmap["next_step"]["reason"])
 
 
 # ============================================================
@@ -377,7 +464,6 @@ if st.session_state.submitted:
     if not goal.strip():
         st.warning("Please tell us what you want to accomplish.")
     else:
-        # Run Intent/Profile agent first, just to check scope + missing info
         preview_profile = intent_profile_agent(goal, st.session_state.business_structure)
 
         if not preview_profile["in_scope"]:
@@ -399,8 +485,10 @@ if st.session_state.submitted:
                 with st.expander("Why are you asking me this?"):
                     st.write(
                         "Your business structure changes which registrations "
-                        "are required. For example, a sole proprietorship does "
-                        "not require SECP registration, but a company does."
+                        "are required, and in what order. For example, a "
+                        "sole proprietorship skips SECP entirely, while a "
+                        "company must incorporate with SECP before it can "
+                        "even apply for its own NTN."
                     )
 
                 structure_choice = st.radio(
@@ -422,7 +510,6 @@ if st.session_state.submitted:
             if "business_structure" in preview_profile["missing"] and not st.session_state.business_structure:
                 st.info("Please select a business structure above to see personalized results.")
             else:
-                # ---- Full pipeline via the Orchestrator ----
                 state = orchestrator(goal, st.session_state.business_structure)
                 verified = state["verified"]
                 roadmap = state["roadmap"]
