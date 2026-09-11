@@ -23,4 +23,4 @@ if st.button("Ask RAASTA AI"):
         st.write("You asked:")
         st.write(user_goal)
     else:
-        st.warning("Please tell me what you want to accomplish.")
+        st.warning("Please tell us what you want to accomplish.")
