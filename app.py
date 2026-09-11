@@ -1,4 +1,6 @@
 import streamlit as st
+import numpy as np
+from sentence_transformers import SentenceTransformer
 
 st.set_page_config(
     page_title="RAASTA AI",
@@ -19,7 +21,7 @@ GOVERNMENT_KEYWORDS = [
     "fbr", "secp", "nadra", "business", "company", "firm", "authority",
     "government", "govt", "application", "apply", "certificate", "fee",
     "documents", "requirement", "department", "ministry", "form",
-    "regulation", "notification", "circular", "municipal", "authority",
+    "regulation", "notification", "circular", "municipal",
     "passport", "cnic", "id card", "property", "land", "construction",
     "import", "export", "customs"
 ]
@@ -27,6 +29,76 @@ GOVERNMENT_KEYWORDS = [
 def is_government_related(text: str) -> bool:
     text_lower = text.lower()
     return any(keyword in text_lower for keyword in GOVERNMENT_KEYWORDS)
+
+# ---------- Tiny Practice Knowledge Base ----------
+# This is a SMALL SAMPLE to prove the pipeline works.
+# Real government sources will be added in a later part.
+KNOWLEDGE_BASE = [
+    {
+        "institution": "SECP (Securities and Exchange Commission of Pakistan)",
+        "title": "Company Registration Overview",
+        "url": "https://www.secp.gov.pk/",
+        "text": (
+            "To register a company in Pakistan, you must apply through SECP's "
+            "e-Services portal. Required documents typically include CNIC "
+            "copies of directors, a proposed company name, and a memorandum "
+            "of association."
+        ),
+    },
+    {
+        "institution": "FBR (Federal Board of Revenue)",
+        "title": "National Tax Number (NTN) Registration",
+        "url": "https://www.fbr.gov.pk/",
+        "text": (
+            "Businesses operating in Pakistan must register for a National "
+            "Tax Number (NTN) with FBR. This is required for filing income "
+            "tax and is typically done online through the IRIS portal."
+        ),
+    },
+    {
+        "institution": "Punjab Government - PBIT",
+        "title": "Business Setup Guidance for Punjab",
+        "url": "https://invest.punjab.gov.pk/",
+        "text": (
+            "Businesses setting up in Punjab, including construction-related "
+            "businesses, may need approvals from local development "
+            "authorities depending on the nature and location of the "
+            "business activity."
+        ),
+    },
+    {
+        "institution": "PEC (Pakistan Engineering Council)",
+        "title": "Construction Firm Registration",
+        "url": "https://www.pec.org.pk/",
+        "text": (
+            "Construction companies undertaking engineering works in "
+            "Pakistan are generally required to register with the Pakistan "
+            "Engineering Council (PEC) to be eligible for certain "
+            "government and private contracts."
+        ),
+    },
+]
+
+# ---------- Load embedding model (cached so it only loads once) ----------
+@st.cache_resource
+def load_model():
+    return SentenceTransformer("all-MiniLM-L6-v2")
+
+@st.cache_resource
+def build_embeddings(_model):
+    texts = [doc["text"] for doc in KNOWLEDGE_BASE]
+    return _model.encode(texts)
+
+model = load_model()
+doc_embeddings = build_embeddings(model)
+
+def retrieve_relevant_docs(query: str, top_k: int = 2):
+    query_embedding = model.encode([query])[0]
+    similarities = np.dot(doc_embeddings, query_embedding) / (
+        np.linalg.norm(doc_embeddings, axis=1) * np.linalg.norm(query_embedding)
+    )
+    top_indices = np.argsort(similarities)[::-1][:top_k]
+    return [KNOWLEDGE_BASE[i] for i in top_indices]
 
 # ---------- UI ----------
 user_goal = st.text_area(
@@ -48,3 +120,11 @@ if st.button("Ask RAASTA AI"):
         st.success("This looks like a government-related request.")
         st.write("You asked:")
         st.write(user_goal)
+
+        st.subheader("Relevant Information Found")
+        results = retrieve_relevant_docs(user_goal)
+        for doc in results:
+            st.markdown(f"**{doc['title']}** — *{doc['institution']}*")
+            st.write(doc["text"])
+            st.caption(f"Source: {doc['url']}")
+            st.divider()
