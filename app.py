@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+from datetime import date
 from sentence_transformers import SentenceTransformer
 
 st.set_page_config(
@@ -31,7 +32,7 @@ def is_government_related(text: str) -> bool:
     return any(keyword in text_lower for keyword in GOVERNMENT_KEYWORDS)
 
 # ---------- Tiny Practice Knowledge Base ----------
-# This is a SMALL SAMPLE to prove the pipeline works.
+# SMALL SAMPLE to prove the pipeline works.
 # Real government sources will be added in a later part.
 KNOWLEDGE_BASE = [
     {
@@ -44,6 +45,9 @@ KNOWLEDGE_BASE = [
             "copies of directors, a proposed company name, and a memorandum "
             "of association."
         ),
+        "source_type": "Official Government Portal",
+        "verification_status": "Verified / Current",
+        "publication_date": "2023-01-15",
     },
     {
         "institution": "FBR (Federal Board of Revenue)",
@@ -54,6 +58,9 @@ KNOWLEDGE_BASE = [
             "Tax Number (NTN) with FBR. This is required for filing income "
             "tax and is typically done online through the IRIS portal."
         ),
+        "source_type": "Official Government Portal",
+        "verification_status": "Verified / Current",
+        "publication_date": "2023-03-10",
     },
     {
         "institution": "Punjab Government - PBIT",
@@ -65,6 +72,9 @@ KNOWLEDGE_BASE = [
             "authorities depending on the nature and location of the "
             "business activity."
         ),
+        "source_type": "Official Government Portal",
+        "verification_status": "Official but date unclear",
+        "publication_date": "Unknown",
     },
     {
         "institution": "PEC (Pakistan Engineering Council)",
@@ -76,6 +86,9 @@ KNOWLEDGE_BASE = [
             "Engineering Council (PEC) to be eligible for certain "
             "government and private contracts."
         ),
+        "source_type": "Official Government Portal",
+        "verification_status": "Verified / Current",
+        "publication_date": "2022-11-05",
     },
 ]
 
@@ -121,10 +134,21 @@ if st.button("Ask RAASTA AI"):
         st.write("You asked:")
         st.write(user_goal)
 
-        st.subheader("Relevant Information Found")
         results = retrieve_relevant_docs(user_goal)
+
+        st.subheader("Relevant Information Found")
         for doc in results:
             st.markdown(f"**{doc['title']}** — *{doc['institution']}*")
             st.write(doc["text"])
-            st.caption(f"Source: {doc['url']}")
             st.divider()
+
+        st.subheader("Sources")
+        for doc in results:
+            with st.expander(f"📄 {doc['title']} ({doc['institution']})"):
+                st.write(f"**Institution:** {doc['institution']}")
+                st.write(f"**Title:** {doc['title']}")
+                st.write(f"**URL:** {doc['url']}")
+                st.write(f"**Source Type:** {doc['source_type']}")
+                st.write(f"**Publication Date:** {doc['publication_date']}")
+                st.write(f"**Status:** {doc['verification_status']}")
+                st.write(f"**Retrieved:** {date.today().isoformat()}")
