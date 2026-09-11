@@ -31,9 +31,12 @@ def is_government_related(text: str) -> bool:
     text_lower = text.lower()
     return any(keyword in text_lower for keyword in GOVERNMENT_KEYWORDS)
 
+def mentions_business(text: str) -> bool:
+    business_words = ["business", "company", "firm", "startup", "start up", "construction"]
+    text_lower = text.lower()
+    return any(word in text_lower for word in business_words)
+
 # ---------- Tiny Practice Knowledge Base ----------
-# SMALL SAMPLE to prove the pipeline works.
-# Real government sources will be added in a later part.
 KNOWLEDGE_BASE = [
     {
         "institution": "SECP (Securities and Exchange Commission of Pakistan)",
@@ -48,6 +51,7 @@ KNOWLEDGE_BASE = [
         "source_type": "Official Government Portal",
         "verification_status": "Verified / Current",
         "publication_date": "2023-01-15",
+        "applies_to_structure": ["company"],
     },
     {
         "institution": "FBR (Federal Board of Revenue)",
@@ -61,6 +65,7 @@ KNOWLEDGE_BASE = [
         "source_type": "Official Government Portal",
         "verification_status": "Verified / Current",
         "publication_date": "2023-03-10",
+        "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
     },
     {
         "institution": "Punjab Government - PBIT",
@@ -75,6 +80,7 @@ KNOWLEDGE_BASE = [
         "source_type": "Official Government Portal",
         "verification_status": "Official but date unclear",
         "publication_date": "Unknown",
+        "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
     },
     {
         "institution": "PEC (Pakistan Engineering Council)",
@@ -89,6 +95,22 @@ KNOWLEDGE_BASE = [
         "source_type": "Official Government Portal",
         "verification_status": "Verified / Current",
         "publication_date": "2022-11-05",
+        "applies_to_structure": ["partnership", "company"],
+    },
+    {
+        "institution": "FBR (Federal Board of Revenue)",
+        "title": "Registering as a Sole Proprietor",
+        "url": "https://www.fbr.gov.pk/",
+        "text": (
+            "A sole proprietorship does not require SECP registration. "
+            "The owner registers directly with FBR for an NTN under their "
+            "own CNIC, and this is generally the simplest business structure "
+            "to set up in Pakistan."
+        ),
+        "source_type": "Official Government Portal",
+        "verification_status": "Verified / Current",
+        "publication_date": "2023-02-01",
+        "applies_to_structure": ["sole_proprietorship"],
     },
 ]
 
@@ -105,24 +127,49 @@ def build_embeddings(_model):
 model = load_model()
 doc_embeddings = build_embeddings(model)
 
-def retrieve_relevant_docs(query: str, top_k: int = 2):
+def retrieve_relevant_docs(query: str, structure: str = None, top_k: int = 3):
     query_embedding = model.encode([query])[0]
     similarities = np.dot(doc_embeddings, query_embedding) / (
         np.linalg.norm(doc_embeddings, axis=1) * np.linalg.norm(query_embedding)
     )
-    top_indices = np.argsort(similarities)[::-1][:top_k]
-    return [KNOWLEDGE_BASE[i] for i in top_indices]
+    ranked_indices = np.argsort(similarities)[::-1]
+
+    results = []
+    for i in ranked_indices:
+        doc = KNOWLEDGE_BASE[i]
+        if structure and structure not in doc["applies_to_structure"]:
+            continue
+        results.append(doc)
+        if len(results) >= top_k:
+            break
+    return results
+
+# ---------- Session State (temporary memory while page is open) ----------
+if "user_goal" not in st.session_state:
+    st.session_state.user_goal = ""
+if "business_structure" not in st.session_state:
+    st.session_state.business_structure = None
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
 
 # ---------- UI ----------
-user_goal = st.text_area(
+user_goal_input = st.text_area(
     "What do you want to accomplish?",
-    placeholder="Example: I want to start a construction business in Lahore."
+    placeholder="Example: I want to start a construction business in Lahore.",
+    value=st.session_state.user_goal,
 )
 
 if st.button("Ask RAASTA AI"):
-    if not user_goal.strip():
+    st.session_state.user_goal = user_goal_input
+    st.session_state.submitted = True
+    st.session_state.business_structure = None  # reset on new question
+
+if st.session_state.submitted:
+    goal = st.session_state.user_goal
+
+    if not goal.strip():
         st.warning("Please tell us what you want to accomplish.")
-    elif not is_government_related(user_goal):
+    elif not is_government_related(goal):
         st.info(
             "RAASTA AI is designed to help with government procedures and "
             "services in Pakistan. Please ask about a government "
@@ -132,23 +179,60 @@ if st.button("Ask RAASTA AI"):
     else:
         st.success("This looks like a government-related request.")
         st.write("You asked:")
-        st.write(user_goal)
+        st.write(goal)
 
-        results = retrieve_relevant_docs(user_goal)
+        # ---------- Dynamic Question: Business Structure ----------
+        if mentions_business(goal):
+            st.subheader("One quick question")
+            st.write("What business structure are you planning to use?")
 
-        st.subheader("Relevant Information Found")
-        for doc in results:
-            st.markdown(f"**{doc['title']}** — *{doc['institution']}*")
-            st.write(doc["text"])
-            st.divider()
+            with st.expander("Why are you asking me this?"):
+                st.write(
+                    "Your business structure changes which registrations "
+                    "are required. For example, a sole proprietorship does "
+                    "not require SECP registration, but a company does."
+                )
 
-        st.subheader("Sources")
-        for doc in results:
-            with st.expander(f"📄 {doc['title']} ({doc['institution']})"):
-                st.write(f"**Institution:** {doc['institution']}")
-                st.write(f"**Title:** {doc['title']}")
-                st.write(f"**URL:** {doc['url']}")
-                st.write(f"**Source Type:** {doc['source_type']}")
-                st.write(f"**Publication Date:** {doc['publication_date']}")
-                st.write(f"**Status:** {doc['verification_status']}")
-                st.write(f"**Retrieved:** {date.today().isoformat()}")
+            structure_choice = st.radio(
+                "Choose one:",
+                options=["Sole Proprietorship", "Partnership", "Company"],
+                index=None,
+                key="structure_radio",
+            )
+
+            structure_map = {
+                "Sole Proprietorship": "sole_proprietorship",
+                "Partnership": "partnership",
+                "Company": "company",
+            }
+
+            if structure_choice:
+                st.session_state.business_structure = structure_map[structure_choice]
+
+        # ---------- Results ----------
+        structure = st.session_state.business_structure
+
+        if mentions_business(goal) and not structure:
+            st.info("Please select a business structure above to see personalized results.")
+        else:
+            results = retrieve_relevant_docs(goal, structure=structure)
+
+            st.subheader("Relevant Information Found")
+            if structure:
+                st.caption(f"Personalized for: {structure.replace('_', ' ').title()}")
+
+            for doc in results:
+                st.markdown(f"**{doc['title']}** — *{doc['institution']}*")
+                st.write(doc["text"])
+                st.divider()
+
+            st.subheader("Sources")
+            for doc in results:
+                with st.expander(f"📄 {doc['title']} ({doc['institution']})"):
+                    st.write(f"**Institution:** {doc['institution']}")
+                    st.write(f"**Title:** {doc['title']}")
+                    st.write(f"**URL:** {doc['url']}")
+                    st.write(f"**Source Type:** {doc['source_type']}")
+                    st.write(f"**Publication Date:** {doc['publication_date']}")
+                    st.write(f"**Status:** {doc['verification_status']}")
+                    st.write(f"**Retrieved:** {date.today().isoformat()}")
