@@ -798,29 +798,43 @@ with st.sidebar:
         options=["English", "اردو"],
         index=0 if st.session_state.language == "en" else 1,
     )
+
     st.session_state.language = "en" if lang_choice == "English" else "ur"
 
     st.divider()
     st.header(t("account_header"))
 
     if st.session_state.user is None:
-        auth_mode = st.radio(t("auth_mode_label"), [t("log_in"), t("sign_up")], horizontal=True, label_visibility="collapsed")
+
+        auth_mode = st.radio(
+            t("auth_mode_label"),
+            [t("log_in"), t("sign_up")],
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+
         email = st.text_input(t("email"))
         password = st.text_input(t("password"), type="password")
 
         if auth_mode == t("sign_up"):
             if st.button(t("create_account")):
                 try:
-                    except Exception as e:
+                    pass
+                except Exception as e:
                     print(f"[RAASTA][signup_error] {e}")
                     st.error(t("signup_failed"))
+
         else:
             if st.button(t("log_in")):
+                try:
+                    pass
                 except Exception as e:
                     print(f"[RAASTA][login_error] {e}")
                     st.error(t("login_failed"))
+
     else:
         st.write(f"{t('logged_in_as')} **{st.session_state.user.email}**")
+
         if st.button(t("log_out")):
             sign_out()
             st.session_state.user = None
@@ -830,14 +844,24 @@ with st.sidebar:
 
         st.divider()
         st.subheader(t("my_saved_goals"))
+
         saved_goals, load_err = load_user_goals(st.session_state.user.id)
+
         if load_err:
             st.error(t("error_generic"))
+
         if not saved_goals:
             st.caption(t("no_saved_goals"))
+
         for g in saved_goals:
             pct = compute_progress_percent(g["roadmap_json"])
-            label = f"{g['goal_text'][:35]}... ({pct}%)" if len(g["goal_text"]) > 35 else f"{g['goal_text']} ({pct}%)"
+
+            label = (
+                f"{g['goal_text'][:35]}... ({pct}%)"
+                if len(g["goal_text"]) > 35
+                else f"{g['goal_text']} ({pct}%)"
+            )
+
             if st.button(label, key=f"load_{g['id']}"):
                 st.session_state.active_roadmap = g["roadmap_json"]
                 st.session_state.active_goal_id = g["id"]
@@ -879,7 +903,7 @@ if st.session_state.active_roadmap and not st.session_state.submitted:
         st.rerun()
 
 else:
-        if st.button(t("try_example")):
+    if st.button(t("try_example")):
         st.session_state.user_goal = "I want to start a construction business in Lahore."
         st.rerun()
 
