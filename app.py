@@ -1,7 +1,8 @@
 import streamlit as st
 import numpy as np
-from datetime import date
+from datetime import date, datetime
 from sentence_transformers import SentenceTransformer
+from supabase import create_client, Client
 
 st.set_page_config(
     page_title="RAASTA AI",
@@ -9,12 +10,16 @@ st.set_page_config(
     layout="centered"
 )
 
-st.title("RAASTA AI")
+# ============================================================
+# SUPABASE CLIENT
+# ============================================================
+@st.cache_resource
+def get_supabase_client() -> Client:
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_ANON_KEY"]
+    return create_client(url, key)
 
-st.write(
-    "Tell RAASTA AI what government-related task you want to accomplish "
-    "in Pakistan."
-)
+supabase = get_supabase_client()
 
 # ============================================================
 # SCOPE DETECTOR
@@ -40,10 +45,6 @@ def mentions_business(text: str) -> bool:
 
 # ============================================================
 # TINY PRACTICE KNOWLEDGE BASE
-# ------------------------------------------------------------
-# Each doc now has an "id" and a "depends_on" list so the
-# Roadmap Agent can build a real ordering, not just
-# mandatory-before-conditional.
 # ============================================================
 KNOWLEDGE_BASE = [
     {
@@ -63,7 +64,7 @@ KNOWLEDGE_BASE = [
         "applies_to_structure": ["company"],
         "classification": "mandatory",
         "reason": "Registering as a company legally requires SECP incorporation before the business can operate.",
-        "depends_on": [],  # first step for companies
+        "depends_on": [],
     },
     {
         "id": "fbr_ntn",
@@ -81,7 +82,6 @@ KNOWLEDGE_BASE = [
         "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
         "classification": "mandatory",
         "reason": "All business structures must have an NTN to file taxes, regardless of size or type.",
-        # a company must be incorporated before it can get its own NTN
         "depends_on": ["secp_company_reg"],
     },
     {
@@ -120,7 +120,6 @@ KNOWLEDGE_BASE = [
         "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
         "classification": "conditional",
         "reason": "This only applies if your specific business activity or location requires local development authority approval.",
-        # needs the business to have its tax registration sorted first
         "depends_on": ["fbr_ntn", "fbr_sole_prop"],
     },
     {
@@ -181,7 +180,7 @@ doc_embeddings = build_embeddings(model)
 
 
 # ============================================================
-# AGENT 1: INTENT & PROFILE AGENT
+# AGENTS (unchanged from Part 8)
 # ============================================================
 def intent_profile_agent(user_goal: str, business_structure: str = None) -> dict:
     profile = {
@@ -196,9 +195,6 @@ def intent_profile_agent(user_goal: str, business_structure: str = None) -> dict
     return profile
 
 
-# ============================================================
-# AGENT 2: GOVERNMENT RESEARCH & RETRIEVAL AGENT
-# ============================================================
 def research_agent(query: str, structure: str = None, top_k: int = 6) -> list:
     query_embedding = model.encode([query])[0]
     similarities = np.dot(doc_embeddings, query_embedding) / (
@@ -217,9 +213,6 @@ def research_agent(query: str, structure: str = None, top_k: int = 6) -> list:
     return evidence
 
 
-# ============================================================
-# AGENT 3: REQUIREMENT ANALYSIS AGENT
-# ============================================================
 def requirement_agent(evidence: list) -> dict:
     return {
         "mandatory": [d for d in evidence if d["classification"] == "mandatory"],
@@ -228,9 +221,6 @@ def requirement_agent(evidence: list) -> dict:
     }
 
 
-# ============================================================
-# AGENT 4: VERIFICATION AGENT
-# ============================================================
 WEAK_STATUSES = {"Official but date unclear", "Secondary", "Unverified", "Potentially outdated"}
 
 def verification_agent(requirements: dict) -> dict:
@@ -250,23 +240,9 @@ def verification_agent(requirements: dict) -> dict:
     return verified
 
 
-# ============================================================
-# AGENT 5: ROADMAP AGENT  (Part 8 — upgraded)
-# ------------------------------------------------------------
-# Responsibility: turn verified requirements into a
-# DEPENDENCY-ORDERED sequence (a simple topological sort),
-# attach source backing to every step, and produce a
-# "next step" with a reason, not just a title.
-# ============================================================
 def _topological_order(docs: list) -> list:
-    """
-    Order docs so that any doc's dependencies (by id) appear
-    before it, using only the ids present in `docs`. Falls back
-    to KB-declaration order for anything with no dependency info.
-    """
     present_ids = {d["id"] for d in docs}
     doc_by_id = {d["id"]: d for d in docs}
-
     ordered = []
     visited = set()
     visiting = set()
@@ -275,7 +251,7 @@ def _topological_order(docs: list) -> list:
         if doc_id in visited or doc_id not in present_ids:
             return
         if doc_id in visiting:
-            return  # cycle guard — skip rather than crash
+            return
         visiting.add(doc_id)
         for dep_id in doc_by_id[doc_id]["depends_on"]:
             visit(dep_id)
@@ -285,28 +261,23 @@ def _topological_order(docs: list) -> list:
 
     for doc in docs:
         visit(doc["id"])
-
     return ordered
 
 
 def roadmap_agent(verified: dict, business_structure: str = None) -> dict:
-    # Mandatory items form the backbone; conditional items are
-    # woven in wherever their dependencies place them.
     all_docs = verified["mandatory"] + verified["conditional"]
     ordered_docs = _topological_order(all_docs)
 
     steps = []
     step_num = 1
 
-    # If we know the structure, make that decision explicit as Step 1
-    # only when it's implied but not itself in the KB (e.g. sole prop
-    # skips SECP, so surfacing the decision keeps the roadmap honest).
     if business_structure:
         steps.append({
+            "step_id": "decision_structure",
             "number": step_num,
             "title": f"Confirm business structure: {business_structure.replace('_', ' ').title()}",
             "institution": "N/A — your decision",
-            "status": "done",  # user already answered this in the UI
+            "status": "done",
             "type": "decision",
             "source": None,
             "depends_on_titles": [],
@@ -318,6 +289,7 @@ def roadmap_agent(verified: dict, business_structure: str = None) -> dict:
         title = doc["title"] if doc["classification"] == "mandatory" else f"{doc['title']} (if applicable)"
         id_to_step_title[doc["id"]] = title
         steps.append({
+            "step_id": doc["id"],
             "number": step_num,
             "title": title,
             "institution": doc["institution"],
@@ -336,10 +308,14 @@ def roadmap_agent(verified: dict, business_structure: str = None) -> dict:
         })
         step_num += 1
 
-    # Next step = first pending step, with a reason
+    return {"steps": steps, "next_step": None}  # next_step recalculated after load/merge
+
+
+def recalculate_next_step(roadmap: dict) -> dict:
+    """Recompute 'Your Next Step' based on current step statuses (post-load or post-checkbox)."""
     next_step = None
-    for step in steps:
-        if step["status"] == "pending":
+    for step in roadmap["steps"]:
+        if step["status"] != "done":
             if step["depends_on_titles"]:
                 dep_text = ", ".join(step["depends_on_titles"])
                 reason = f"This comes next because it depends on: {dep_text}."
@@ -347,13 +323,10 @@ def roadmap_agent(verified: dict, business_structure: str = None) -> dict:
                 reason = "This has no unmet dependencies, so you can start here."
             next_step = {"title": step["title"], "reason": reason}
             break
+    roadmap["next_step"] = next_step
+    return roadmap
 
-    return {"steps": steps, "next_step": next_step}
 
-
-# ============================================================
-# ORCHESTRATOR
-# ============================================================
 def orchestrator(user_goal: str, business_structure: str = None) -> dict:
     state = {
         "user_goal": user_goal,
@@ -364,20 +337,68 @@ def orchestrator(user_goal: str, business_structure: str = None) -> dict:
         "verified": {},
         "roadmap": {},
     }
-
     state["profile"] = intent_profile_agent(user_goal, business_structure)
-
     if not state["profile"]["in_scope"]:
         return state
-
     if state["profile"]["missing"]:
         return state
-
     state["evidence"] = research_agent(user_goal, structure=business_structure)
     state["requirements"] = requirement_agent(state["evidence"])
     state["verified"] = verification_agent(state["requirements"])
-    state["roadmap"] = roadmap_agent(state["verified"], business_structure)
+    roadmap = roadmap_agent(state["verified"], business_structure)
+    state["roadmap"] = recalculate_next_step(roadmap)
     return state
+
+
+# ============================================================
+# PERSISTENCE LAYER (Supabase)
+# ============================================================
+def save_progress(user_id: str, goal_text: str, business_structure: str, roadmap: dict, existing_id: str = None):
+    payload = {
+        "user_id": user_id,
+        "goal_text": goal_text,
+        "business_structure": business_structure,
+        "roadmap_json": roadmap,
+        "updated_at": datetime.utcnow().isoformat(),
+    }
+    if existing_id:
+        supabase.table("raasta_progress").update(payload).eq("id", existing_id).execute()
+        return existing_id
+    else:
+        result = supabase.table("raasta_progress").insert(payload).execute()
+        return result.data[0]["id"] if result.data else None
+
+
+def load_user_goals(user_id: str) -> list:
+    result = (
+        supabase.table("raasta_progress")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("updated_at", desc=True)
+        .execute()
+    )
+    return result.data or []
+
+
+def compute_progress_percent(roadmap: dict) -> int:
+    steps = roadmap.get("steps", [])
+    if not steps:
+        return 0
+    done = sum(1 for s in steps if s["status"] == "done")
+    return round((done / len(steps)) * 100)
+
+
+# ============================================================
+# AUTH HELPERS
+# ============================================================
+def sign_up(email: str, password: str):
+    return supabase.auth.sign_up({"email": email, "password": password})
+
+def sign_in(email: str, password: str):
+    return supabase.auth.sign_in_with_password({"email": email, "password": password})
+
+def sign_out():
+    supabase.auth.sign_out()
 
 
 # ============================================================
@@ -401,147 +422,267 @@ def render_requirement(doc):
     render_source_expander(doc)
     st.divider()
 
-def render_roadmap(roadmap: dict):
+def render_roadmap_with_progress(roadmap: dict, editable: bool = True):
     st.subheader("🗺️ Step-by-Step Roadmap")
     if not roadmap["steps"]:
         st.write("No roadmap could be generated for this query.")
-        return
+        return roadmap
 
+    percent = compute_progress_percent(roadmap)
+    st.progress(percent / 100, text=f"Progress: {percent}%")
+
+    changed = False
     for step in roadmap["steps"]:
-        if step["type"] == "decision":
-            icon = "✅"
-        elif step["type"] == "mandatory":
-            icon = "🔲"
-        else:
-            icon = "◽"
+        icon = "✅" if step["status"] == "done" else ("🔲" if step["type"] == "mandatory" else "◽")
+        col1, col2 = st.columns([0.08, 0.92])
+        with col1:
+            if editable and step["type"] != "decision":
+                checked = st.checkbox(
+                    "",
+                    value=(step["status"] == "done"),
+                    key=f"step_{step['step_id']}",
+                    label_visibility="collapsed",
+                )
+                new_status = "done" if checked else "pending"
+                if new_status != step["status"]:
+                    step["status"] = new_status
+                    changed = True
+            else:
+                st.write(icon)
+        with col2:
+            st.write(f"**Step {step['number']}: {step['title']}** — {step['institution']}")
+            if step["depends_on_titles"]:
+                st.caption(f"Depends on: {', '.join(step['depends_on_titles'])}")
+            if step["source"]:
+                st.caption(
+                    f"Source: {step['source']['institution']} — "
+                    f"{step['source']['verification_status']} "
+                    f"([link]({step['source']['url']}))"
+                )
 
-        st.write(f"{icon} **Step {step['number']}: {step['title']}** — {step['institution']}")
-
-        if step["depends_on_titles"]:
-            dep_text = ", ".join(step["depends_on_titles"])
-            st.caption(f"Depends on: {dep_text}")
-
-        if step["source"]:
-            st.caption(
-                f"Source: {step['source']['institution']} — "
-                f"{step['source']['verification_status']} "
-                f"([link]({step['source']['url']}))"
-            )
+    if changed:
+        recalculate_next_step(roadmap)
 
     if roadmap["next_step"]:
         st.subheader("👉 Your Next Step")
         st.success(roadmap["next_step"]["title"])
         st.caption(roadmap["next_step"]["reason"])
+    else:
+        st.success("🎉 All steps complete for this goal!")
+
+    return roadmap
 
 
 # ============================================================
 # SESSION STATE
 # ============================================================
-if "user_goal" not in st.session_state:
-    st.session_state.user_goal = ""
-if "business_structure" not in st.session_state:
-    st.session_state.business_structure = None
-if "submitted" not in st.session_state:
-    st.session_state.submitted = False
+defaults = {
+    "user": None,
+    "user_goal": "",
+    "business_structure": None,
+    "submitted": False,
+    "active_roadmap": None,
+    "active_goal_id": None,
+    "active_goal_text": None,
+}
+for key, val in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = val
 
 # ============================================================
-# UI
+# AUTH UI (sidebar)
 # ============================================================
-user_goal_input = st.text_area(
-    "What do you want to accomplish?",
-    placeholder="Example: I want to start a construction business in Lahore.",
-    value=st.session_state.user_goal,
+with st.sidebar:
+    st.header("Account")
+
+    if st.session_state.user is None:
+        auth_mode = st.radio("Choose:", ["Log In", "Sign Up"], horizontal=True)
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+
+        if auth_mode == "Sign Up":
+            if st.button("Create Account"):
+                try:
+                    res = sign_up(email, password)
+                    if res.user:
+                        st.success("Account created. Please log in.")
+                    else:
+                        st.error("Sign up failed. Try a different email/password.")
+                except Exception as e:
+                    st.error(f"Sign up error: {e}")
+        else:
+            if st.button("Log In"):
+                try:
+                    res = sign_in(email, password)
+                    if res.user:
+                        st.session_state.user = res.user
+                        st.rerun()
+                    else:
+                        st.error("Login failed. Check your credentials.")
+                except Exception as e:
+                    st.error(f"Login error: {e}")
+    else:
+        st.write(f"Logged in as **{st.session_state.user.email}**")
+        if st.button("Log Out"):
+            sign_out()
+            st.session_state.user = None
+            st.session_state.active_roadmap = None
+            st.session_state.active_goal_id = None
+            st.rerun()
+
+        st.divider()
+        st.subheader("My Saved Goals")
+        saved_goals = load_user_goals(st.session_state.user.id)
+        if not saved_goals:
+            st.caption("No saved goals yet.")
+        for g in saved_goals:
+            pct = compute_progress_percent(g["roadmap_json"])
+            label = f"{g['goal_text'][:35]}... ({pct}%)" if len(g["goal_text"]) > 35 else f"{g['goal_text']} ({pct}%)"
+            if st.button(label, key=f"load_{g['id']}"):
+                st.session_state.active_roadmap = g["roadmap_json"]
+                st.session_state.active_goal_id = g["id"]
+                st.session_state.active_goal_text = g["goal_text"]
+                st.session_state.business_structure = g["business_structure"]
+                st.session_state.submitted = False  # skip re-running the full pipeline
+                st.rerun()
+
+# ============================================================
+# MAIN UI
+# ============================================================
+st.title("RAASTA AI")
+st.write(
+    "Tell RAASTA AI what government-related task you want to accomplish "
+    "in Pakistan."
 )
 
-if st.button("Ask RAASTA AI"):
-    st.session_state.user_goal = user_goal_input
-    st.session_state.submitted = True
-    st.session_state.business_structure = None
+if st.session_state.user is None:
+    st.info("Log in or sign up in the sidebar to save your progress across sessions.")
 
-if st.session_state.submitted:
-    goal = st.session_state.user_goal
+# ---- If a saved goal was loaded from the sidebar, render it directly ----
+if st.session_state.active_roadmap and not st.session_state.submitted:
+    st.subheader("Loaded goal:")
+    st.write(st.session_state.active_goal_text)
+    updated_roadmap = render_roadmap_with_progress(st.session_state.active_roadmap, editable=True)
 
-    if not goal.strip():
-        st.warning("Please tell us what you want to accomplish.")
-    else:
-        preview_profile = intent_profile_agent(goal, st.session_state.business_structure)
+    if st.button("💾 Save Progress"):
+        save_progress(
+            user_id=st.session_state.user.id,
+            goal_text=st.session_state.active_goal_text,
+            business_structure=st.session_state.business_structure,
+            roadmap=updated_roadmap,
+            existing_id=st.session_state.active_goal_id,
+        )
+        st.success("Progress saved.")
 
-        if not preview_profile["in_scope"]:
-            st.info(
-                "RAASTA AI is designed to help with government procedures and "
-                "services in Pakistan. Please ask about a government "
-                "registration, license, permit, application, tax, service, "
-                "or other government procedure."
-            )
+    if st.button("Start a new goal"):
+        st.session_state.active_roadmap = None
+        st.session_state.active_goal_id = None
+        st.rerun()
+
+else:
+    user_goal_input = st.text_area(
+        "What do you want to accomplish?",
+        placeholder="Example: I want to start a construction business in Lahore.",
+        value=st.session_state.user_goal,
+    )
+
+    if st.button("Ask RAASTA AI"):
+        st.session_state.user_goal = user_goal_input
+        st.session_state.submitted = True
+        st.session_state.business_structure = None
+        st.session_state.active_roadmap = None
+        st.session_state.active_goal_id = None
+
+    if st.session_state.submitted:
+        goal = st.session_state.user_goal
+
+        if not goal.strip():
+            st.warning("Please tell us what you want to accomplish.")
         else:
-            st.success("This looks like a government-related request.")
-            st.write("You asked:")
-            st.write(goal)
+            preview_profile = intent_profile_agent(goal, st.session_state.business_structure)
 
-            if "business_structure" in preview_profile["missing"]:
-                st.subheader("One quick question")
-                st.write("What business structure are you planning to use?")
-
-                with st.expander("Why are you asking me this?"):
-                    st.write(
-                        "Your business structure changes which registrations "
-                        "are required, and in what order. For example, a "
-                        "sole proprietorship skips SECP entirely, while a "
-                        "company must incorporate with SECP before it can "
-                        "even apply for its own NTN."
-                    )
-
-                structure_choice = st.radio(
-                    "Choose one:",
-                    options=["Sole Proprietorship", "Partnership", "Company"],
-                    index=None,
-                    key="structure_radio",
+            if not preview_profile["in_scope"]:
+                st.info(
+                    "RAASTA AI is designed to help with government procedures and "
+                    "services in Pakistan. Please ask about a government "
+                    "registration, license, permit, application, tax, service, "
+                    "or other government procedure."
                 )
-
-                structure_map = {
-                    "Sole Proprietorship": "sole_proprietorship",
-                    "Partnership": "partnership",
-                    "Company": "company",
-                }
-
-                if structure_choice:
-                    st.session_state.business_structure = structure_map[structure_choice]
-
-            if "business_structure" in preview_profile["missing"] and not st.session_state.business_structure:
-                st.info("Please select a business structure above to see personalized results.")
             else:
-                state = orchestrator(goal, st.session_state.business_structure)
-                verified = state["verified"]
-                roadmap = state["roadmap"]
+                st.success("This looks like a government-related request.")
+                st.write("You asked:")
+                st.write(goal)
 
-                if state["business_structure"]:
-                    st.caption(f"Personalized for: {state['business_structure'].replace('_', ' ').title()}")
+                if "business_structure" in preview_profile["missing"]:
+                    st.subheader("One quick question")
+                    st.write("What business structure are you planning to use?")
 
-                if verified.get("flags"):
-                    with st.expander("⚠️ Verification notes"):
-                        for f in verified["flags"]:
-                            st.write(f"- {f}")
+                    with st.expander("Why are you asking me this?"):
+                        st.write(
+                            "Your business structure changes which registrations "
+                            "are required, and in what order."
+                        )
 
-                st.subheader("✅ Mandatory Requirements")
-                if verified.get("mandatory"):
-                    for doc in verified["mandatory"]:
-                        render_requirement(doc)
+                    structure_choice = st.radio(
+                        "Choose one:",
+                        options=["Sole Proprietorship", "Partnership", "Company"],
+                        index=None,
+                        key="structure_radio",
+                    )
+                    structure_map = {
+                        "Sole Proprietorship": "sole_proprietorship",
+                        "Partnership": "partnership",
+                        "Company": "company",
+                    }
+                    if structure_choice:
+                        st.session_state.business_structure = structure_map[structure_choice]
+
+                if "business_structure" in preview_profile["missing"] and not st.session_state.business_structure:
+                    st.info("Please select a business structure above to see personalized results.")
                 else:
-                    st.write("No mandatory requirements found for this query.")
+                    state = orchestrator(goal, st.session_state.business_structure)
+                    verified = state["verified"]
+                    roadmap = state["roadmap"]
 
-                st.subheader("⚠️ Conditional Requirements")
-                if verified.get("conditional"):
-                    for doc in verified["conditional"]:
+                    if state["business_structure"]:
+                        st.caption(f"Personalized for: {state['business_structure'].replace('_', ' ').title()}")
+
+                    if verified.get("flags"):
+                        with st.expander("⚠️ Verification notes"):
+                            for f in verified["flags"]:
+                                st.write(f"- {f}")
+
+                    st.subheader("✅ Mandatory Requirements")
+                    for doc in verified.get("mandatory", []):
                         render_requirement(doc)
-                else:
-                    st.write("No conditional requirements found for this query.")
+                    if not verified.get("mandatory"):
+                        st.write("No mandatory requirements found for this query.")
 
-                st.subheader("ℹ️ Optional")
-                if verified.get("optional"):
-                    for doc in verified["optional"]:
+                    st.subheader("⚠️ Conditional Requirements")
+                    for doc in verified.get("conditional", []):
                         render_requirement(doc)
-                else:
-                    st.write("No optional items found for this query.")
+                    if not verified.get("conditional"):
+                        st.write("No conditional requirements found for this query.")
 
-                if roadmap:
-                    render_roadmap(roadmap)
+                    st.subheader("ℹ️ Optional")
+                    for doc in verified.get("optional", []):
+                        render_requirement(doc)
+                    if not verified.get("optional"):
+                        st.write("No optional items found for this query.")
+
+                    if roadmap and roadmap.get("steps"):
+                        updated_roadmap = render_roadmap_with_progress(roadmap, editable=True)
+
+                        if st.session_state.user is not None:
+                            if st.button("💾 Save this goal"):
+                                new_id = save_progress(
+                                    user_id=st.session_state.user.id,
+                                    goal_text=goal,
+                                    business_structure=state["business_structure"],
+                                    roadmap=updated_roadmap,
+                                )
+                                st.session_state.active_goal_id = new_id
+                                st.session_state.active_goal_text = goal
+                                st.success("Goal saved! You'll find it in 'My Saved Goals' next time you log in.")
+                        else:
+                            st.info("Log in to save this roadmap and track your progress across sessions.")
