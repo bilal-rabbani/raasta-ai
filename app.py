@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+import requests
 from datetime import date, datetime
 from sentence_transformers import SentenceTransformer
 from supabase import create_client, Client
@@ -89,9 +90,10 @@ TRANSLATIONS = {
     "publication_date_label": {"en": "Publication Date", "ur": "اشاعت کی تاریخ"},
     "status_label": {"en": "Status", "ur": "حیثیت"},
     "retrieved_label": {"en": "Retrieved", "ur": "حاصل کردہ تاریخ"},
-    "translation_note": {
-        "en": "",
-        "ur": "نوٹ: کچھ تفصیلات ابھی صرف انگریزی میں دستیاب ہیں۔",
+    "ai_summary_header": {"en": "🤖 Plain-Language Summary", "ur": "🤖 سادہ زبان میں خلاصہ"},
+    "ai_summary_unavailable": {
+        "en": "A plain-language AI summary isn't available right now, but the verified information above is complete and accurate.",
+        "ur": "اس وقت اے آئی خلاصہ دستیاب نہیں، لیکن اوپر دی گئی تصدیق شدہ معلومات مکمل اور درست ہیں۔",
     },
 }
 
@@ -109,6 +111,103 @@ def get_supabase_client() -> Client:
     return create_client(url, key)
 
 supabase = get_supabase_client()
+
+# ============================================================
+# LLM ROUTER (Primary + Fallback) — Part 11
+# ============================================================
+def _call_openai_compatible(base_url, api_key, model, prompt, timeout=20):
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are RAASTA AI, a Pakistani government procedure assistant. "
+                    "Explain the given information clearly and briefly in plain language. "
+                    "Only use the facts given to you — never invent requirements, fees, or dates."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "max_tokens": 300,
+        "temperature": 0.3,
+    }
+    response = requests.post(f"{base_url}/chat/completions", headers=headers, json=payload, timeout=timeout)
+    response.raise_for_status()
+    data = response.json()
+    return data["choices"][0]["message"]["content"].strip()
+
+
+def llm_router(prompt: str) -> dict:
+    """
+    Tries the primary LLM provider first, then falls back to the next
+    configured provider if it fails. Providers are only used if their
+    API key exists in Streamlit secrets. If none succeed, returns
+    success=False instead of guessing — no fabricated output.
+    """
+    providers = []
+
+    if "GROQ_API_KEY" in st.secrets:
+        providers.append({
+            "name": "Groq",
+            "base_url": "https://api.groq.com/openai/v1",
+            "api_key": st.secrets["GROQ_API_KEY"],
+            "model": st.secrets.get("GROQ_MODEL", "llama-3.1-8b-instant"),
+        })
+
+    if "OPENAI_API_KEY" in st.secrets:
+        providers.append({
+            "name": "OpenAI",
+            "base_url": "https://api.openai.com/v1",
+            "api_key": st.secrets["OPENAI_API_KEY"],
+            "model": st.secrets.get("OPENAI_MODEL", "gpt-4o-mini"),
+        })
+
+    if "OPENROUTER_API_KEY" in st.secrets:
+        providers.append({
+            "name": "OpenRouter",
+            "base_url": "https://openrouter.ai/api/v1",
+            "api_key": st.secrets["OPENROUTER_API_KEY"],
+            "model": st.secrets.get("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct:free"),
+        })
+
+    if not providers:
+        return {"success": False, "text": None, "provider_used": None, "error": "No LLM provider configured."}
+
+    last_error = None
+    for provider in providers:
+        try:
+            text = _call_openai_compatible(
+                provider["base_url"], provider["api_key"], provider["model"], prompt
+            )
+            return {"success": True, "text": text, "provider_used": provider["name"], "error": None}
+        except Exception as e:
+            last_error = str(e)
+            continue
+
+    return {"success": False, "text": None, "provider_used": None, "error": last_error}
+
+
+def build_summary_prompt(goal: str, structure: str, verified: dict) -> str:
+    lines = [f"User's goal: {goal}"]
+    if structure:
+        lines.append(f"Business structure: {structure.replace('_', ' ')}")
+    lines.append("Mandatory requirements:")
+    for d in verified.get("mandatory", []):
+        lines.append(f"- {d['title']} ({d['institution']})")
+    lines.append("Conditional requirements:")
+    for d in verified.get("conditional", []):
+        lines.append(f"- {d['title']} ({d['institution']}) — {d['reason']}")
+    lines.append(
+        "Write a short, friendly 3-4 sentence plain-language summary of what "
+        "this person needs to do, in the order they should do it. Do not add "
+        "any requirement not listed above."
+    )
+    return "\n".join(lines)
 
 # ============================================================
 # SCOPE DETECTOR
@@ -133,7 +232,7 @@ def mentions_business(text: str) -> bool:
     return any(word in text_lower for word in business_words)
 
 # ============================================================
-# TINY PRACTICE KNOWLEDGE BASE (with Urdu translations)
+# TINY PRACTICE KNOWLEDGE BASE
 # ============================================================
 KNOWLEDGE_BASE = [
     {
@@ -294,14 +393,13 @@ KNOWLEDGE_BASE = [
 KB_BY_ID = {doc["id"]: doc for doc in KNOWLEDGE_BASE}
 
 def loc_text(doc, field_en, field_ur_key):
-    """Return the Urdu version of a KB field if available and Urdu is selected, else English."""
     lang = st.session_state.get("language", "en")
     if lang == "ur" and doc.get(field_ur_key):
         return doc[field_ur_key]
     return doc[field_en]
 
 # ============================================================
-# EMBEDDING MODEL (cached) — search always runs on English text
+# EMBEDDING MODEL (cached)
 # ============================================================
 @st.cache_resource
 def load_model():
@@ -317,7 +415,7 @@ doc_embeddings = build_embeddings(model)
 
 
 # ============================================================
-# AGENTS (unchanged logic from Part 9)
+# AGENTS
 # ============================================================
 def intent_profile_agent(user_goal: str, business_structure: str = None) -> dict:
     profile = {
@@ -418,6 +516,7 @@ def roadmap_agent(verified: dict, business_structure: str = None) -> dict:
             "type": "decision",
             "source": None,
             "depends_on_titles": [],
+            "depends_on_ids": [],
         })
         step_num += 1
 
@@ -442,6 +541,7 @@ def roadmap_agent(verified: dict, business_structure: str = None) -> dict:
                 id_to_step_title.get(dep_id, dep_id) for dep_id in doc["depends_on"]
                 if dep_id in id_to_step_title
             ],
+            "depends_on_ids": doc["depends_on"],
         })
         step_num += 1
 
@@ -562,31 +662,39 @@ def render_requirement(doc):
     render_source_expander(doc)
     st.divider()
 
+
 def render_roadmap_with_progress(roadmap: dict, editable: bool = True):
     st.subheader(t("roadmap_header"))
     if not roadmap["steps"]:
         st.write(t("no_roadmap"))
         return roadmap
 
-    percent = compute_progress_percent(roadmap)
-    st.progress(percent / 100, text=f"{t('progress_label')}: {percent}%")
+    # Order of togglable steps (excludes the "decision" step), used both
+    # for the cascade-uncheck logic and for drawing the checkboxes.
+    toggle_order = [s["step_id"] for s in roadmap["steps"] if s["type"] != "decision"]
 
-    changed = False
+    def cascade_uncheck(step_id):
+        # Runs the instant a checkbox is clicked, BEFORE the page redraws.
+        # If it was unchecked, force every step listed below it to unchecked too.
+        key = f"step_{step_id}"
+        if not st.session_state.get(key, False):
+            idx = toggle_order.index(step_id)
+            for later_id in toggle_order[idx + 1:]:
+                st.session_state[f"step_{later_id}"] = False
+
     for step in roadmap["steps"]:
         icon = "✅" if step["status"] == "done" else ("🔲" if step["type"] == "mandatory" else "◽")
         col1, col2 = st.columns([0.08, 0.92])
         with col1:
             if editable and step["type"] != "decision":
-                checked = st.checkbox(
+                st.checkbox(
                     "",
                     value=(step["status"] == "done"),
                     key=f"step_{step['step_id']}",
                     label_visibility="collapsed",
+                    on_change=cascade_uncheck,
+                    args=(step["step_id"],),
                 )
-                new_status = "done" if checked else "pending"
-                if new_status != step["status"]:
-                    step["status"] = new_status
-                    changed = True
             else:
                 st.write(icon)
         with col2:
@@ -600,8 +708,18 @@ def render_roadmap_with_progress(roadmap: dict, editable: bool = True):
                     f"([link]({step['source']['url']}))"
                 )
 
-    if changed:
-        recalculate_next_step(roadmap)
+    # IMPORTANT: sync statuses from the checkbox widgets AFTER all checkboxes
+    # are drawn (and after any cascade), THEN compute the percentage — this
+    # is the fix for the progress bar being stuck.
+    for step in roadmap["steps"]:
+        if step["type"] != "decision":
+            checked = st.session_state.get(f"step_{step['step_id']}", False)
+            step["status"] = "done" if checked else "pending"
+
+    percent = compute_progress_percent(roadmap)
+    st.progress(percent / 100, text=f"{t('progress_label')}: {percent}%")
+
+    recalculate_next_step(roadmap)
 
     if roadmap["next_step"]:
         st.subheader(t("your_next_step"))
@@ -788,6 +906,15 @@ else:
                         with st.expander(t("verification_notes")):
                             for f in verified["flags"]:
                                 st.write(f"- {f}")
+
+                    # ---------- Part 11: AI plain-language summary ----------
+                    llm_result = llm_router(build_summary_prompt(goal, state["business_structure"], verified))
+                    st.subheader(t("ai_summary_header"))
+                    if llm_result["success"]:
+                        st.info(llm_result["text"])
+                        st.caption(f"Generated by: {llm_result['provider_used']}")
+                    else:
+                        st.caption(t("ai_summary_unavailable"))
 
                     st.subheader(t("mandatory_requirements"))
                     for doc in verified.get("mandatory", []):

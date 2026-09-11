@@ -2,3 +2,4 @@ streamlit
 numpy
 sentence-transformers
 supabase
+requests
