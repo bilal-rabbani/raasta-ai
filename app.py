@@ -156,7 +156,7 @@ def llm_router(prompt: str) -> dict:
             "name": "Groq",
             "base_url": "https://api.groq.com/openai/v1",
             "api_key": st.secrets["GROQ_API_KEY"],
-            "model": st.secrets.get("GROQ_MODEL", "llama-3.1-8b-instant"),
+            "model": st.secrets.get("GROQ_MODEL", "openai/gpt-oss-20b"),
         })
 
     if "OPENAI_API_KEY" in st.secrets:
