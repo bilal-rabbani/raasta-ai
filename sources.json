@@ -1,0 +1,121 @@
+[
+  {
+    "source_id": "nadra_home",
+    "institution": "NADRA",
+    "title": "National Database and Registration Authority",
+    "url": "https://www.nadra.gov.pk/",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "Federal"
+  },
+  {
+    "source_id": "pec_faqs",
+    "institution": "Pakistan Engineering Council (PEC)",
+    "title": "PEC FAQs",
+    "url": "https://www.pec.org.pk/faqs/",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "Federal/National"
+  },
+  {
+    "source_id": "pec_home",
+    "institution": "Pakistan Engineering Council (PEC)",
+    "title": "Pakistan Engineering Council",
+    "url": "https://www.pec.org.pk/",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "Federal/National"
+  },
+  {
+    "source_id": "pec_coportal",
+    "institution": "Pakistan Engineering Council (PEC)",
+    "title": "Constructor Operator Registration Portal",
+    "url": "https://coportal.pec.org.pk/",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "Federal/National"
+  },
+  {
+    "source_id": "pec_registration_policy_2024",
+    "institution": "Pakistan Engineering Council (PEC)",
+    "title": "Updated Registration Policy - July 30, 2024",
+    "url": "https://www.pec.org.pk/wp-content/uploads/2024/09/Updated-Registration-Policy-July-30-2024.pdf",
+    "source_type": "pdf",
+    "expected_publication_date": "2024-07-30",
+    "jurisdiction": "Federal/National"
+  },
+  {
+    "source_id": "secp_home",
+    "institution": "Securities and Exchange Commission of Pakistan (SECP)",
+    "title": "Securities and Exchange Commission of Pakistan",
+    "url": "https://www.secp.gov.pk/",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "Federal"
+  },
+  {
+    "source_id": "punjab_ppra",
+    "institution": "Punjab Procurement Regulatory Authority (PPRA)",
+    "title": "Punjab PPRA",
+    "url": "https://ppra.punjab.gov.pk/",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "Punjab"
+  },
+  {
+    "source_id": "kpra_home",
+    "institution": "Khyber Pakhtunkhwa Revenue Authority (KPRA)",
+    "title": "Khyber Pakhtunkhwa Revenue Authority",
+    "url": "https://kpra.kp.gov.pk/",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "KP"
+  },
+  {
+    "source_id": "balochistan_procurement_rules_2016",
+    "institution": "Balochistan Public Procurement",
+    "title": "Balochistan Public Procurement Rules",
+    "url": "https://rspn.org/wp-content/uploads/2016/12/BB-Balochistan-Public-Procurement-Rules.pdf",
+    "source_type": "pdf",
+    "expected_publication_date": null,
+    "jurisdiction": "Balochistan",
+    "source_status": "third_party_hosted_official_document"
+  },
+  {
+    "source_id": "balochistan_bpptwo_unverified",
+    "institution": "Unverified",
+    "title": "BPPTWO Portal - institution/source to be verified",
+    "url": "https://bpptwo.vdc.services:5451/",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "Balochistan",
+    "source_status": "unverified"
+  },
+  {
+    "source_id": "sindh_ppra",
+    "institution": "Sindh Public Procurement Regulatory Authority (SPPRA)",
+    "title": "Sindh Public Procurement Regulatory Authority Portal",
+    "url": "https://e.pprasindh.gov.pk/",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "Sindh"
+  },
+  {
+    "source_id": "kp_registrar_firms",
+    "institution": "Government of Khyber Pakhtunkhwa",
+    "title": "Registrar of Firms",
+    "url": "https://business.kp.gov.pk/registrar-of-firms",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "KP"
+  },
+  {
+    "source_id": "fbr_home",
+    "institution": "Federal Board of Revenue (FBR)",
+    "title": "Federal Board of Revenue",
+    "url": "https://www.fbr.gov.pk/",
+    "source_type": "html",
+    "expected_publication_date": null,
+    "jurisdiction": "Federal"
+  }
+]
