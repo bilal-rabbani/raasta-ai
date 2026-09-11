@@ -216,7 +216,7 @@ def build_summary_prompt(goal: str, structure: str, verified: dict) -> str:
     lines = [f"User's goal: {goal}"]
     if structure:
         lines.append(f"Business structure: {structure.replace('_', ' ')}")
-    lines.append("Mandatory requirements:")
+        lines.append("Mandatory requirements:")
     for d in verified.get("mandatory", []):
         lines.append(f"- {d['title']} ({d['institution']})")
     lines.append("Conditional requirements:")
@@ -228,7 +228,9 @@ def build_summary_prompt(goal: str, structure: str, verified: dict) -> str:
         "any requirement not listed above."
     )
     return "\n".join(lines)
-  def get_cached_summary(goal: str, structure: str, verified: dict) -> dict:
+
+
+def get_cached_summary(goal: str, structure: str, verified: dict) -> dict:
     cache_key = f"{goal}::{structure}"
     cache = st.session_state.setdefault("summary_cache", {})
     if cache_key in cache:
