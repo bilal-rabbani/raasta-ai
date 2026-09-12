@@ -52,6 +52,8 @@ KNOWLEDGE_BASE = [
         "verification_status": "Verified / Current",
         "publication_date": "2023-01-15",
         "applies_to_structure": ["company"],
+        "classification": "mandatory",
+        "reason": "Registering as a company legally requires SECP incorporation before the business can operate.",
     },
     {
         "institution": "FBR (Federal Board of Revenue)",
@@ -66,6 +68,8 @@ KNOWLEDGE_BASE = [
         "verification_status": "Verified / Current",
         "publication_date": "2023-03-10",
         "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
+        "classification": "mandatory",
+        "reason": "All business structures must have an NTN to file taxes, regardless of size or type.",
     },
     {
         "institution": "Punjab Government - PBIT",
@@ -81,6 +85,8 @@ KNOWLEDGE_BASE = [
         "verification_status": "Official but date unclear",
         "publication_date": "Unknown",
         "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
+        "classification": "conditional",
+        "reason": "This only applies if your specific business activity or location requires local development authority approval.",
     },
     {
         "institution": "PEC (Pakistan Engineering Council)",
@@ -96,6 +102,8 @@ KNOWLEDGE_BASE = [
         "verification_status": "Verified / Current",
         "publication_date": "2022-11-05",
         "applies_to_structure": ["partnership", "company"],
+        "classification": "conditional",
+        "reason": "Required only if you plan to bid on government or PEC-regulated engineering contracts, not for all construction work.",
     },
     {
         "institution": "FBR (Federal Board of Revenue)",
@@ -111,6 +119,24 @@ KNOWLEDGE_BASE = [
         "verification_status": "Verified / Current",
         "publication_date": "2023-02-01",
         "applies_to_structure": ["sole_proprietorship"],
+        "classification": "mandatory",
+        "reason": "As a sole proprietor, NTN registration under your own CNIC is the primary legal registration step.",
+    },
+    {
+        "institution": "Punjab Chamber of Commerce",
+        "title": "Chamber of Commerce Membership",
+        "url": "https://example-lcci.pk/",
+        "text": (
+            "Businesses may optionally join their local Chamber of Commerce "
+            "and Industry for networking, trade certificates, and business "
+            "advocacy support. This is not a legal requirement to operate."
+        ),
+        "source_type": "Secondary / Industry Body",
+        "verification_status": "Secondary",
+        "publication_date": "Unknown",
+        "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
+        "classification": "optional",
+        "reason": "Chamber membership provides business benefits but is not legally required to operate.",
     },
 ]
 
@@ -127,7 +153,7 @@ def build_embeddings(_model):
 model = load_model()
 doc_embeddings = build_embeddings(model)
 
-def retrieve_relevant_docs(query: str, structure: str = None, top_k: int = 3):
+def retrieve_relevant_docs(query: str, structure: str = None, top_k: int = 6):
     query_embedding = model.encode([query])[0]
     similarities = np.dot(doc_embeddings, query_embedding) / (
         np.linalg.norm(doc_embeddings, axis=1) * np.linalg.norm(query_embedding)
@@ -144,7 +170,24 @@ def retrieve_relevant_docs(query: str, structure: str = None, top_k: int = 3):
             break
     return results
 
-# ---------- Session State (temporary memory while page is open) ----------
+def render_source_expander(doc):
+    with st.expander(f"📄 {doc['title']} ({doc['institution']})"):
+        st.write(f"**Institution:** {doc['institution']}")
+        st.write(f"**Title:** {doc['title']}")
+        st.write(f"**URL:** {doc['url']}")
+        st.write(f"**Source Type:** {doc['source_type']}")
+        st.write(f"**Publication Date:** {doc['publication_date']}")
+        st.write(f"**Status:** {doc['verification_status']}")
+        st.write(f"**Retrieved:** {date.today().isoformat()}")
+
+def render_requirement(doc):
+    st.markdown(f"**{doc['title']}** — *{doc['institution']}*")
+    st.write(doc["text"])
+    st.caption(f"Why this applies: {doc['reason']}")
+    render_source_expander(doc)
+    st.divider()
+
+# ---------- Session State ----------
 if "user_goal" not in st.session_state:
     st.session_state.user_goal = ""
 if "business_structure" not in st.session_state:
@@ -162,7 +205,7 @@ user_goal_input = st.text_area(
 if st.button("Ask RAASTA AI"):
     st.session_state.user_goal = user_goal_input
     st.session_state.submitted = True
-    st.session_state.business_structure = None  # reset on new question
+    st.session_state.business_structure = None
 
 if st.session_state.submitted:
     goal = st.session_state.user_goal
@@ -181,7 +224,6 @@ if st.session_state.submitted:
         st.write("You asked:")
         st.write(goal)
 
-        # ---------- Dynamic Question: Business Structure ----------
         if mentions_business(goal):
             st.subheader("One quick question")
             st.write("What business structure are you planning to use?")
@@ -209,7 +251,6 @@ if st.session_state.submitted:
             if structure_choice:
                 st.session_state.business_structure = structure_map[structure_choice]
 
-        # ---------- Results ----------
         structure = st.session_state.business_structure
 
         if mentions_business(goal) and not structure:
@@ -217,22 +258,30 @@ if st.session_state.submitted:
         else:
             results = retrieve_relevant_docs(goal, structure=structure)
 
-            st.subheader("Relevant Information Found")
+            mandatory = [d for d in results if d["classification"] == "mandatory"]
+            conditional = [d for d in results if d["classification"] == "conditional"]
+            optional = [d for d in results if d["classification"] == "optional"]
+
             if structure:
                 st.caption(f"Personalized for: {structure.replace('_', ' ').title()}")
 
-            for doc in results:
-                st.markdown(f"**{doc['title']}** — *{doc['institution']}*")
-                st.write(doc["text"])
-                st.divider()
+            st.subheader("✅ Mandatory Requirements")
+            if mandatory:
+                for doc in mandatory:
+                    render_requirement(doc)
+            else:
+                st.write("No mandatory requirements found for this query.")
 
-            st.subheader("Sources")
-            for doc in results:
-                with st.expander(f"📄 {doc['title']} ({doc['institution']})"):
-                    st.write(f"**Institution:** {doc['institution']}")
-                    st.write(f"**Title:** {doc['title']}")
-                    st.write(f"**URL:** {doc['url']}")
-                    st.write(f"**Source Type:** {doc['source_type']}")
-                    st.write(f"**Publication Date:** {doc['publication_date']}")
-                    st.write(f"**Status:** {doc['verification_status']}")
-                    st.write(f"**Retrieved:** {date.today().isoformat()}")
+            st.subheader("⚠️ Conditional Requirements")
+            if conditional:
+                for doc in conditional:
+                    render_requirement(doc)
+            else:
+                st.write("No conditional requirements found for this query.")
+
+            st.subheader("ℹ️ Optional")
+            if optional:
+                for doc in optional:
+                    render_requirement(doc)
+            else:
+                st.write("No optional items found for this query.")
