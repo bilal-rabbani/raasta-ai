@@ -171,7 +171,7 @@ def llm_router(prompt: str) -> dict:
     """
     providers = []
 
-    # Support multiple Groq keys — GROQ_API_KEY, GROQ_API_KEY_2, GROQ_API_KEY_3, etc.
+# Support multiple Groq keys — GROQ_API_KEY, GROQ_API_KEY_2, GROQ_API_KEY_3, etc.
  groq_keys = []
 if "GROQ_API_KEY" in st.secrets:
     groq_keys.append(st.secrets["GROQ_API_KEY"])
