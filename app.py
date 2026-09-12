@@ -11,6 +11,95 @@ st.set_page_config(
 )
 
 # ============================================================
+# TRANSLATIONS (UI text)
+# ============================================================
+TRANSLATIONS = {
+    "app_title": {"en": "RAASTA AI", "ur": "راستہ اے آئی"},
+    "app_intro": {
+        "en": "Tell RAASTA AI what government-related task you want to accomplish in Pakistan.",
+        "ur": "راستہ اے آئی کو بتائیں کہ آپ پاکستان میں کون سا سرکاری کام مکمل کرنا چاہتے ہیں۔",
+    },
+    "account_header": {"en": "Account", "ur": "اکاؤنٹ"},
+    "log_in": {"en": "Log In", "ur": "لاگ ان"},
+    "sign_up": {"en": "Sign Up", "ur": "سائن اپ"},
+    "email": {"en": "Email", "ur": "ای میل"},
+    "password": {"en": "Password", "ur": "پاس ورڈ"},
+    "create_account": {"en": "Create Account", "ur": "اکاؤنٹ بنائیں"},
+    "account_created": {"en": "Account created. Please log in.", "ur": "اکاؤنٹ بن گیا۔ براہ کرم لاگ ان کریں۔"},
+    "signup_failed": {"en": "Sign up failed. Try a different email/password.", "ur": "سائن اپ ناکام۔ دوسرا ای میل/پاس ورڈ آزمائیں۔"},
+    "login_failed": {"en": "Login failed. Check your credentials.", "ur": "لاگ ان ناکام۔ اپنی معلومات چیک کریں۔"},
+    "logged_in_as": {"en": "Logged in as", "ur": "لاگ ان بطور"},
+    "log_out": {"en": "Log Out", "ur": "لاگ آؤٹ"},
+    "my_saved_goals": {"en": "My Saved Goals", "ur": "میرے محفوظ کردہ اہداف"},
+    "no_saved_goals": {"en": "No saved goals yet.", "ur": "ابھی تک کوئی ہدف محفوظ نہیں۔"},
+    "login_info": {"en": "Log in or sign up in the sidebar to save your progress across sessions.", "ur": "اپنی پیش رفت محفوظ کرنے کے لیے سائیڈبار میں لاگ ان یا سائن اپ کریں۔"},
+    "loaded_goal": {"en": "Loaded goal:", "ur": "لوڈ کیا گیا ہدف:"},
+    "save_progress": {"en": "💾 Save Progress", "ur": "💾 پیش رفت محفوظ کریں"},
+    "progress_saved": {"en": "Progress saved.", "ur": "پیش رفت محفوظ ہو گئی۔"},
+    "start_new_goal": {"en": "Start a new goal", "ur": "نیا ہدف شروع کریں"},
+    "goal_input_label": {"en": "What do you want to accomplish?", "ur": "آپ کیا حاصل کرنا چاہتے ہیں؟"},
+    "goal_input_placeholder": {
+        "en": "Example: I want to start a construction business in Lahore.",
+        "ur": "مثال: میں لاہور میں تعمیراتی کاروبار شروع کرنا چاہتا ہوں۔",
+    },
+    "ask_button": {"en": "Ask RAASTA AI", "ur": "راستہ اے آئی سے پوچھیں"},
+    "please_tell_us": {"en": "Please tell us what you want to accomplish.", "ur": "براہ کرم بتائیں کہ آپ کیا حاصل کرنا چاہتے ہیں۔"},
+    "out_of_scope": {
+        "en": "RAASTA AI is designed to help with government procedures and services in Pakistan. Please ask about a government registration, license, permit, application, tax, service, or other government procedure.",
+        "ur": "راستہ اے آئی پاکستان میں سرکاری امور اور خدمات میں مدد کے لیے بنایا گیا ہے۔ براہ کرم سرکاری رجسٹریشن، لائسنس، پرمٹ، درخواست، ٹیکس، یا کسی اور سرکاری طریقہ کار کے بارے میں پوچھیں۔",
+    },
+    "looks_government": {"en": "This looks like a government-related request.", "ur": "یہ ایک سرکاری نوعیت کی درخواست لگتی ہے۔"},
+    "you_asked": {"en": "You asked:", "ur": "آپ نے پوچھا:"},
+    "one_quick_question": {"en": "One quick question", "ur": "ایک مختصر سوال"},
+    "business_structure_question": {"en": "What business structure are you planning to use?", "ur": "آپ کس قسم کا کاروباری ڈھانچہ استعمال کرنے کا ارادہ رکھتے ہیں؟"},
+    "why_asking": {"en": "Why are you asking me this?", "ur": "آپ مجھ سے یہ کیوں پوچھ رہے ہیں؟"},
+    "why_asking_explanation": {
+        "en": "Your business structure changes which registrations are required, and in what order.",
+        "ur": "آپ کا کاروباری ڈھانچہ اس بات کا تعین کرتا ہے کہ کون سی رجسٹریشنز درکار ہیں اور کس ترتیب میں۔",
+    },
+    "choose_one": {"en": "Choose one:", "ur": "ایک منتخب کریں:"},
+    "sole_proprietorship": {"en": "Sole Proprietorship", "ur": "واحد ملکیت"},
+    "partnership": {"en": "Partnership", "ur": "شراکت داری"},
+    "company": {"en": "Company", "ur": "کمپنی"},
+    "select_structure_prompt": {"en": "Please select a business structure above to see personalized results.", "ur": "ذاتی نتائج دیکھنے کے لیے براہ کرم اوپر کاروباری ڈھانچہ منتخب کریں۔"},
+    "personalized_for": {"en": "Personalized for", "ur": "کے لیے موزوں کردہ"},
+    "verification_notes": {"en": "⚠️ Verification notes", "ur": "⚠️ تصدیقی نوٹس"},
+    "mandatory_requirements": {"en": "✅ Mandatory Requirements", "ur": "✅ لازمی تقاضے"},
+    "no_mandatory": {"en": "No mandatory requirements found for this query.", "ur": "اس سوال کے لیے کوئی لازمی تقاضے نہیں ملے۔"},
+    "conditional_requirements": {"en": "⚠️ Conditional Requirements", "ur": "⚠️ مشروط تقاضے"},
+    "no_conditional": {"en": "No conditional requirements found for this query.", "ur": "اس سوال کے لیے کوئی مشروط تقاضے نہیں ملے۔"},
+    "optional_requirements": {"en": "ℹ️ Optional", "ur": "ℹ️ اختیاری"},
+    "no_optional": {"en": "No optional items found for this query.", "ur": "اس سوال کے لیے کوئی اختیاری آئٹم نہیں ملا۔"},
+    "why_this_applies": {"en": "Why this applies", "ur": "یہ کیوں لاگو ہوتا ہے"},
+    "roadmap_header": {"en": "🗺️ Step-by-Step Roadmap", "ur": "🗺️ مرحلہ وار روڈ میپ"},
+    "no_roadmap": {"en": "No roadmap could be generated for this query.", "ur": "اس سوال کے لیے کوئی روڈ میپ نہیں بن سکا۔"},
+    "progress_label": {"en": "Progress", "ur": "پیش رفت"},
+    "depends_on": {"en": "Depends on", "ur": "کا انحصار ہے"},
+    "source_label": {"en": "Source", "ur": "ماخذ"},
+    "your_next_step": {"en": "👉 Your Next Step", "ur": "👉 آپ کا اگلا قدم"},
+    "all_complete": {"en": "🎉 All steps complete for this goal!", "ur": "🎉 اس ہدف کے تمام مراحل مکمل ہو گئے!"},
+    "save_goal_button": {"en": "💾 Save this goal", "ur": "💾 یہ ہدف محفوظ کریں"},
+    "goal_saved": {"en": "Goal saved! You'll find it in 'My Saved Goals' next time you log in.", "ur": "ہدف محفوظ ہو گیا! اگلی بار لاگ ان کرنے پر یہ 'میرے محفوظ کردہ اہداف' میں ملے گا۔"},
+    "login_to_save": {"en": "Log in to save this roadmap and track your progress across sessions.", "ur": "یہ روڈ میپ محفوظ کرنے اور پیش رفت ٹریک کرنے کے لیے لاگ ان کریں۔"},
+    "language_label": {"en": "Language", "ur": "زبان"},
+    "institution_label": {"en": "Institution", "ur": "ادارہ"},
+    "title_label": {"en": "Title", "ur": "عنوان"},
+    "url_label": {"en": "URL", "ur": "یو آر ایل"},
+    "source_type_label": {"en": "Source Type", "ur": "ماخذ کی قسم"},
+    "publication_date_label": {"en": "Publication Date", "ur": "اشاعت کی تاریخ"},
+    "status_label": {"en": "Status", "ur": "حیثیت"},
+    "retrieved_label": {"en": "Retrieved", "ur": "حاصل کردہ تاریخ"},
+    "translation_note": {
+        "en": "",
+        "ur": "نوٹ: کچھ تفصیلات ابھی صرف انگریزی میں دستیاب ہیں۔",
+    },
+}
+
+def t(key: str) -> str:
+    lang = st.session_state.get("language", "en")
+    return TRANSLATIONS.get(key, {}).get(lang, key)
+
+# ============================================================
 # SUPABASE CLIENT
 # ============================================================
 @st.cache_resource
@@ -44,13 +133,14 @@ def mentions_business(text: str) -> bool:
     return any(word in text_lower for word in business_words)
 
 # ============================================================
-# TINY PRACTICE KNOWLEDGE BASE
+# TINY PRACTICE KNOWLEDGE BASE (with Urdu translations)
 # ============================================================
 KNOWLEDGE_BASE = [
     {
         "id": "secp_company_reg",
         "institution": "SECP (Securities and Exchange Commission of Pakistan)",
         "title": "Company Registration Overview",
+        "title_ur": "کمپنی رجسٹریشن کا جائزہ",
         "url": "https://www.secp.gov.pk/",
         "text": (
             "To register a company in Pakistan, you must apply through SECP's "
@@ -58,23 +148,35 @@ KNOWLEDGE_BASE = [
             "copies of directors, a proposed company name, and a memorandum "
             "of association."
         ),
+        "text_ur": (
+            "پاکستان میں کمپنی رجسٹر کرنے کے لیے آپ کو SECP کے ای-سروسز پورٹل کے "
+            "ذریعے درخواست دینی ہوگی۔ عام طور پر درکار دستاویزات میں ڈائریکٹرز کے "
+            "شناختی کارڈ کی کاپیاں، تجویز کردہ کمپنی کا نام، اور میمورنڈم آف ایسوسی ایشن شامل ہیں۔"
+        ),
         "source_type": "Official Government Portal",
         "verification_status": "Verified / Current",
         "publication_date": "2023-01-15",
         "applies_to_structure": ["company"],
         "classification": "mandatory",
         "reason": "Registering as a company legally requires SECP incorporation before the business can operate.",
+        "reason_ur": "کمپنی کے طور پر رجسٹریشن کے لیے کاروبار شروع کرنے سے پہلے قانونی طور پر SECP سے انکارپوریشن ضروری ہے۔",
         "depends_on": [],
     },
     {
         "id": "fbr_ntn",
         "institution": "FBR (Federal Board of Revenue)",
         "title": "National Tax Number (NTN) Registration",
+        "title_ur": "قومی ٹیکس نمبر (این ٹی این) کی رجسٹریشن",
         "url": "https://www.fbr.gov.pk/",
         "text": (
             "Businesses operating in Pakistan must register for a National "
             "Tax Number (NTN) with FBR. This is required for filing income "
             "tax and is typically done online through the IRIS portal."
+        ),
+        "text_ur": (
+            "پاکستان میں کام کرنے والے کاروباروں کو FBR کے ساتھ قومی ٹیکس نمبر "
+            "(NTN) رجسٹر کروانا ضروری ہے۔ یہ انکم ٹیکس فائل کرنے کے لیے درکار ہے اور "
+            "عام طور پر آئی آر آئی ایس پورٹل کے ذریعے آن لائن کیا جاتا ہے۔"
         ),
         "source_type": "Official Government Portal",
         "verification_status": "Verified / Current",
@@ -82,12 +184,14 @@ KNOWLEDGE_BASE = [
         "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
         "classification": "mandatory",
         "reason": "All business structures must have an NTN to file taxes, regardless of size or type.",
+        "reason_ur": "ہر قسم کے کاروباری ڈھانچے کے لیے ٹیکس فائل کرنے کے لیے این ٹی این ضروری ہے۔",
         "depends_on": ["secp_company_reg"],
     },
     {
         "id": "fbr_sole_prop",
         "institution": "FBR (Federal Board of Revenue)",
         "title": "Registering as a Sole Proprietor",
+        "title_ur": "واحد ملکیت کے طور پر رجسٹریشن",
         "url": "https://www.fbr.gov.pk/",
         "text": (
             "A sole proprietorship does not require SECP registration. "
@@ -95,18 +199,25 @@ KNOWLEDGE_BASE = [
             "own CNIC, and this is generally the simplest business structure "
             "to set up in Pakistan."
         ),
+        "text_ur": (
+            "واحد ملکیت کے لیے SECP رجسٹریشن درکار نہیں۔ مالک اپنے شناختی کارڈ "
+            "کے تحت براہ راست FBR کے ساتھ NTN رجسٹر کرواتا ہے، اور یہ پاکستان میں "
+            "قائم کرنے کا سب سے آسان کاروباری ڈھانچہ ہے۔"
+        ),
         "source_type": "Official Government Portal",
         "verification_status": "Verified / Current",
         "publication_date": "2023-02-01",
         "applies_to_structure": ["sole_proprietorship"],
         "classification": "mandatory",
         "reason": "As a sole proprietor, NTN registration under your own CNIC is the primary legal registration step.",
+        "reason_ur": "واحد ملکیت میں، اپنے شناختی کارڈ کے تحت NTN رجسٹریشن بنیادی قانونی قدم ہے۔",
         "depends_on": [],
     },
     {
         "id": "punjab_local_approval",
         "institution": "Punjab Government - PBIT",
         "title": "Business Setup Guidance for Punjab",
+        "title_ur": "پنجاب کے لیے کاروبار قائم کرنے کی رہنمائی",
         "url": "https://invest.punjab.gov.pk/",
         "text": (
             "Businesses setting up in Punjab, including construction-related "
@@ -114,18 +225,24 @@ KNOWLEDGE_BASE = [
             "authorities depending on the nature and location of the "
             "business activity."
         ),
+        "text_ur": (
+            "پنجاب میں کاروبار قائم کرنے والوں، بشمول تعمیراتی کاروبار، کو کاروبار "
+            "کی نوعیت اور مقام کے مطابق مقامی ترقیاتی اداروں سے منظوری کی ضرورت ہو سکتی ہے۔"
+        ),
         "source_type": "Official Government Portal",
         "verification_status": "Official but date unclear",
         "publication_date": "Unknown",
         "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
         "classification": "conditional",
         "reason": "This only applies if your specific business activity or location requires local development authority approval.",
+        "reason_ur": "یہ صرف اس صورت میں لاگو ہوتا ہے جب آپ کی کاروباری سرگرمی یا مقام کو مقامی ترقیاتی ادارے کی منظوری درکار ہو۔",
         "depends_on": ["fbr_ntn", "fbr_sole_prop"],
     },
     {
         "id": "pec_construction_reg",
         "institution": "PEC (Pakistan Engineering Council)",
         "title": "Construction Firm Registration",
+        "title_ur": "تعمیراتی فرم کی رجسٹریشن",
         "url": "https://www.pec.org.pk/",
         "text": (
             "Construction companies undertaking engineering works in "
@@ -133,23 +250,35 @@ KNOWLEDGE_BASE = [
             "Engineering Council (PEC) to be eligible for certain "
             "government and private contracts."
         ),
+        "text_ur": (
+            "پاکستان میں انجینئرنگ کے کام کرنے والی تعمیراتی کمپنیوں کو بعض سرکاری "
+            "اور نجی ٹھیکوں کے لیے اہل ہونے کے لیے عام طور پر پاکستان انجینئرنگ کونسل "
+            "(PEC) کے ساتھ رجسٹر ہونا ضروری ہوتا ہے۔"
+        ),
         "source_type": "Official Government Portal",
         "verification_status": "Verified / Current",
         "publication_date": "2022-11-05",
         "applies_to_structure": ["partnership", "company"],
         "classification": "conditional",
         "reason": "Required only if you plan to bid on government or PEC-regulated engineering contracts, not for all construction work.",
+        "reason_ur": "یہ صرف اس صورت میں درکار ہے جب آپ سرکاری یا PEC کے زیرِ انتظام انجینئرنگ ٹھیکوں کے لیے بولی دینا چاہتے ہوں۔",
         "depends_on": ["fbr_ntn"],
     },
     {
         "id": "chamber_membership",
         "institution": "Punjab Chamber of Commerce",
         "title": "Chamber of Commerce Membership",
+        "title_ur": "چیمبر آف کامرس کی رکنیت",
         "url": "https://example-lcci.pk/",
         "text": (
             "Businesses may optionally join their local Chamber of Commerce "
             "and Industry for networking, trade certificates, and business "
             "advocacy support. This is not a legal requirement to operate."
+        ),
+        "text_ur": (
+            "کاروبار اختیاری طور پر اپنے مقامی چیمبر آف کامرس اینڈ انڈسٹری میں شامل "
+            "ہو سکتے ہیں تاکہ رابطہ کاری، تجارتی سرٹیفکیٹس، اور کاروباری معاونت حاصل "
+            "کی جا سکے۔ یہ کاروبار چلانے کے لیے قانونی طور پر لازمی نہیں۔"
         ),
         "source_type": "Secondary / Industry Body",
         "verification_status": "Secondary",
@@ -157,14 +286,22 @@ KNOWLEDGE_BASE = [
         "applies_to_structure": ["sole_proprietorship", "partnership", "company"],
         "classification": "optional",
         "reason": "Chamber membership provides business benefits but is not legally required to operate.",
+        "reason_ur": "چیمبر کی رکنیت کاروباری فوائد دیتی ہے لیکن قانونی طور پر لازمی نہیں۔",
         "depends_on": [],
     },
 ]
 
 KB_BY_ID = {doc["id"]: doc for doc in KNOWLEDGE_BASE}
 
+def loc_text(doc, field_en, field_ur_key):
+    """Return the Urdu version of a KB field if available and Urdu is selected, else English."""
+    lang = st.session_state.get("language", "en")
+    if lang == "ur" and doc.get(field_ur_key):
+        return doc[field_ur_key]
+    return doc[field_en]
+
 # ============================================================
-# EMBEDDING MODEL (cached)
+# EMBEDDING MODEL (cached) — search always runs on English text
 # ============================================================
 @st.cache_resource
 def load_model():
@@ -180,7 +317,7 @@ doc_embeddings = build_embeddings(model)
 
 
 # ============================================================
-# AGENTS (unchanged from Part 8)
+# AGENTS (unchanged logic from Part 9)
 # ============================================================
 def intent_profile_agent(user_goal: str, business_structure: str = None) -> dict:
     profile = {
@@ -308,11 +445,10 @@ def roadmap_agent(verified: dict, business_structure: str = None) -> dict:
         })
         step_num += 1
 
-    return {"steps": steps, "next_step": None}  # next_step recalculated after load/merge
+    return {"steps": steps, "next_step": None}
 
 
 def recalculate_next_step(roadmap: dict) -> dict:
-    """Recompute 'Your Next Step' based on current step statuses (post-load or post-checkbox)."""
     next_step = None
     for step in roadmap["steps"]:
         if step["status"] != "done":
@@ -405,31 +541,35 @@ def sign_out():
 # RENDER HELPERS
 # ============================================================
 def render_source_expander(doc):
-    with st.expander(f"📄 {doc['title']} ({doc['institution']})"):
-        st.write(f"**Institution:** {doc['institution']}")
-        st.write(f"**Title:** {doc['title']}")
-        st.write(f"**URL:** {doc['url']}")
-        st.write(f"**Source Type:** {doc['source_type']}")
-        st.write(f"**Publication Date:** {doc['publication_date']}")
-        st.write(f"**Status:** {doc['verification_status']}")
-        st.write(f"**Retrieved:** {date.today().isoformat()}")
+    title_display = loc_text(doc, "title", "title_ur")
+    with st.expander(f"📄 {title_display} ({doc['institution']})"):
+        st.write(f"**{t('institution_label')}:** {doc['institution']}")
+        st.write(f"**{t('title_label')}:** {title_display}")
+        st.write(f"**{t('url_label')}:** {doc['url']}")
+        st.write(f"**{t('source_type_label')}:** {doc['source_type']}")
+        st.write(f"**{t('publication_date_label')}:** {doc['publication_date']}")
+        st.write(f"**{t('status_label')}:** {doc['verification_status']}")
+        st.write(f"**{t('retrieved_label')}:** {date.today().isoformat()}")
 
 def render_requirement(doc):
     flag = " ⚠️" if doc.get("flagged") else ""
-    st.markdown(f"**{doc['title']}**{flag} — *{doc['institution']}*")
-    st.write(doc["text"])
-    st.caption(f"Why this applies: {doc['reason']}")
+    title_display = loc_text(doc, "title", "title_ur")
+    text_display = loc_text(doc, "text", "text_ur")
+    reason_display = loc_text(doc, "reason", "reason_ur")
+    st.markdown(f"**{title_display}**{flag} — *{doc['institution']}*")
+    st.write(text_display)
+    st.caption(f"{t('why_this_applies')}: {reason_display}")
     render_source_expander(doc)
     st.divider()
 
 def render_roadmap_with_progress(roadmap: dict, editable: bool = True):
-    st.subheader("🗺️ Step-by-Step Roadmap")
+    st.subheader(t("roadmap_header"))
     if not roadmap["steps"]:
-        st.write("No roadmap could be generated for this query.")
+        st.write(t("no_roadmap"))
         return roadmap
 
     percent = compute_progress_percent(roadmap)
-    st.progress(percent / 100, text=f"Progress: {percent}%")
+    st.progress(percent / 100, text=f"{t('progress_label')}: {percent}%")
 
     changed = False
     for step in roadmap["steps"]:
@@ -452,10 +592,10 @@ def render_roadmap_with_progress(roadmap: dict, editable: bool = True):
         with col2:
             st.write(f"**Step {step['number']}: {step['title']}** — {step['institution']}")
             if step["depends_on_titles"]:
-                st.caption(f"Depends on: {', '.join(step['depends_on_titles'])}")
+                st.caption(f"{t('depends_on')}: {', '.join(step['depends_on_titles'])}")
             if step["source"]:
                 st.caption(
-                    f"Source: {step['source']['institution']} — "
+                    f"{t('source_label')}: {step['source']['institution']} — "
                     f"{step['source']['verification_status']} "
                     f"([link]({step['source']['url']}))"
                 )
@@ -464,11 +604,11 @@ def render_roadmap_with_progress(roadmap: dict, editable: bool = True):
         recalculate_next_step(roadmap)
 
     if roadmap["next_step"]:
-        st.subheader("👉 Your Next Step")
+        st.subheader(t("your_next_step"))
         st.success(roadmap["next_step"]["title"])
         st.caption(roadmap["next_step"]["reason"])
     else:
-        st.success("🎉 All steps complete for this goal!")
+        st.success(t("all_complete"))
 
     return roadmap
 
@@ -484,46 +624,55 @@ defaults = {
     "active_roadmap": None,
     "active_goal_id": None,
     "active_goal_text": None,
+    "language": "en",
 }
 for key, val in defaults.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
 # ============================================================
-# AUTH UI (sidebar)
+# SIDEBAR: LANGUAGE + AUTH
 # ============================================================
 with st.sidebar:
-    st.header("Account")
+    lang_choice = st.selectbox(
+        t("language_label"),
+        options=["English", "اردو"],
+        index=0 if st.session_state.language == "en" else 1,
+    )
+    st.session_state.language = "en" if lang_choice == "English" else "ur"
+
+    st.divider()
+    st.header(t("account_header"))
 
     if st.session_state.user is None:
-        auth_mode = st.radio("Choose:", ["Log In", "Sign Up"], horizontal=True)
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
+        auth_mode = st.radio("", [t("log_in"), t("sign_up")], horizontal=True, label_visibility="collapsed")
+        email = st.text_input(t("email"))
+        password = st.text_input(t("password"), type="password")
 
-        if auth_mode == "Sign Up":
-            if st.button("Create Account"):
+        if auth_mode == t("sign_up"):
+            if st.button(t("create_account")):
                 try:
                     res = sign_up(email, password)
                     if res.user:
-                        st.success("Account created. Please log in.")
+                        st.success(t("account_created"))
                     else:
-                        st.error("Sign up failed. Try a different email/password.")
+                        st.error(t("signup_failed"))
                 except Exception as e:
-                    st.error(f"Sign up error: {e}")
+                    st.error(f"{t('signup_failed')} ({e})")
         else:
-            if st.button("Log In"):
+            if st.button(t("log_in")):
                 try:
                     res = sign_in(email, password)
                     if res.user:
                         st.session_state.user = res.user
                         st.rerun()
                     else:
-                        st.error("Login failed. Check your credentials.")
+                        st.error(t("login_failed"))
                 except Exception as e:
-                    st.error(f"Login error: {e}")
+                    st.error(f"{t('login_failed')} ({e})")
     else:
-        st.write(f"Logged in as **{st.session_state.user.email}**")
-        if st.button("Log Out"):
+        st.write(f"{t('logged_in_as')} **{st.session_state.user.email}**")
+        if st.button(t("log_out")):
             sign_out()
             st.session_state.user = None
             st.session_state.active_roadmap = None
@@ -531,10 +680,10 @@ with st.sidebar:
             st.rerun()
 
         st.divider()
-        st.subheader("My Saved Goals")
+        st.subheader(t("my_saved_goals"))
         saved_goals = load_user_goals(st.session_state.user.id)
         if not saved_goals:
-            st.caption("No saved goals yet.")
+            st.caption(t("no_saved_goals"))
         for g in saved_goals:
             pct = compute_progress_percent(g["roadmap_json"])
             label = f"{g['goal_text'][:35]}... ({pct}%)" if len(g["goal_text"]) > 35 else f"{g['goal_text']} ({pct}%)"
@@ -543,28 +692,24 @@ with st.sidebar:
                 st.session_state.active_goal_id = g["id"]
                 st.session_state.active_goal_text = g["goal_text"]
                 st.session_state.business_structure = g["business_structure"]
-                st.session_state.submitted = False  # skip re-running the full pipeline
+                st.session_state.submitted = False
                 st.rerun()
 
 # ============================================================
 # MAIN UI
 # ============================================================
-st.title("RAASTA AI")
-st.write(
-    "Tell RAASTA AI what government-related task you want to accomplish "
-    "in Pakistan."
-)
+st.title(t("app_title"))
+st.write(t("app_intro"))
 
 if st.session_state.user is None:
-    st.info("Log in or sign up in the sidebar to save your progress across sessions.")
+    st.info(t("login_info"))
 
-# ---- If a saved goal was loaded from the sidebar, render it directly ----
 if st.session_state.active_roadmap and not st.session_state.submitted:
-    st.subheader("Loaded goal:")
+    st.subheader(t("loaded_goal"))
     st.write(st.session_state.active_goal_text)
     updated_roadmap = render_roadmap_with_progress(st.session_state.active_roadmap, editable=True)
 
-    if st.button("💾 Save Progress"):
+    if st.button(t("save_progress")):
         save_progress(
             user_id=st.session_state.user.id,
             goal_text=st.session_state.active_goal_text,
@@ -572,21 +717,21 @@ if st.session_state.active_roadmap and not st.session_state.submitted:
             roadmap=updated_roadmap,
             existing_id=st.session_state.active_goal_id,
         )
-        st.success("Progress saved.")
+        st.success(t("progress_saved"))
 
-    if st.button("Start a new goal"):
+    if st.button(t("start_new_goal")):
         st.session_state.active_roadmap = None
         st.session_state.active_goal_id = None
         st.rerun()
 
 else:
     user_goal_input = st.text_area(
-        "What do you want to accomplish?",
-        placeholder="Example: I want to start a construction business in Lahore.",
+        t("goal_input_label"),
+        placeholder=t("goal_input_placeholder"),
         value=st.session_state.user_goal,
     )
 
-    if st.button("Ask RAASTA AI"):
+    if st.button(t("ask_button")):
         st.session_state.user_goal = user_goal_input
         st.session_state.submitted = True
         st.session_state.business_structure = None
@@ -597,84 +742,76 @@ else:
         goal = st.session_state.user_goal
 
         if not goal.strip():
-            st.warning("Please tell us what you want to accomplish.")
+            st.warning(t("please_tell_us"))
         else:
             preview_profile = intent_profile_agent(goal, st.session_state.business_structure)
 
             if not preview_profile["in_scope"]:
-                st.info(
-                    "RAASTA AI is designed to help with government procedures and "
-                    "services in Pakistan. Please ask about a government "
-                    "registration, license, permit, application, tax, service, "
-                    "or other government procedure."
-                )
+                st.info(t("out_of_scope"))
             else:
-                st.success("This looks like a government-related request.")
-                st.write("You asked:")
+                st.success(t("looks_government"))
+                st.write(t("you_asked"))
                 st.write(goal)
 
                 if "business_structure" in preview_profile["missing"]:
-                    st.subheader("One quick question")
-                    st.write("What business structure are you planning to use?")
+                    st.subheader(t("one_quick_question"))
+                    st.write(t("business_structure_question"))
 
-                    with st.expander("Why are you asking me this?"):
-                        st.write(
-                            "Your business structure changes which registrations "
-                            "are required, and in what order."
-                        )
+                    with st.expander(t("why_asking")):
+                        st.write(t("why_asking_explanation"))
 
                     structure_choice = st.radio(
-                        "Choose one:",
-                        options=["Sole Proprietorship", "Partnership", "Company"],
+                        t("choose_one"),
+                        options=[t("sole_proprietorship"), t("partnership"), t("company")],
                         index=None,
                         key="structure_radio",
                     )
                     structure_map = {
-                        "Sole Proprietorship": "sole_proprietorship",
-                        "Partnership": "partnership",
-                        "Company": "company",
+                        t("sole_proprietorship"): "sole_proprietorship",
+                        t("partnership"): "partnership",
+                        t("company"): "company",
                     }
                     if structure_choice:
                         st.session_state.business_structure = structure_map[structure_choice]
 
                 if "business_structure" in preview_profile["missing"] and not st.session_state.business_structure:
-                    st.info("Please select a business structure above to see personalized results.")
+                    st.info(t("select_structure_prompt"))
                 else:
                     state = orchestrator(goal, st.session_state.business_structure)
                     verified = state["verified"]
                     roadmap = state["roadmap"]
 
                     if state["business_structure"]:
-                        st.caption(f"Personalized for: {state['business_structure'].replace('_', ' ').title()}")
+                        st.caption(f"{t('personalized_for')}: {state['business_structure'].replace('_', ' ').title()}")
 
                     if verified.get("flags"):
-                        with st.expander("⚠️ Verification notes"):
+                        with st.expander(t("verification_notes")):
                             for f in verified["flags"]:
                                 st.write(f"- {f}")
 
-                    st.subheader("✅ Mandatory Requirements")
+                    st.subheader(t("mandatory_requirements"))
                     for doc in verified.get("mandatory", []):
                         render_requirement(doc)
                     if not verified.get("mandatory"):
-                        st.write("No mandatory requirements found for this query.")
+                        st.write(t("no_mandatory"))
 
-                    st.subheader("⚠️ Conditional Requirements")
+                    st.subheader(t("conditional_requirements"))
                     for doc in verified.get("conditional", []):
                         render_requirement(doc)
                     if not verified.get("conditional"):
-                        st.write("No conditional requirements found for this query.")
+                        st.write(t("no_conditional"))
 
-                    st.subheader("ℹ️ Optional")
+                    st.subheader(t("optional_requirements"))
                     for doc in verified.get("optional", []):
                         render_requirement(doc)
                     if not verified.get("optional"):
-                        st.write("No optional items found for this query.")
+                        st.write(t("no_optional"))
 
                     if roadmap and roadmap.get("steps"):
                         updated_roadmap = render_roadmap_with_progress(roadmap, editable=True)
 
                         if st.session_state.user is not None:
-                            if st.button("💾 Save this goal"):
+                            if st.button(t("save_goal_button")):
                                 new_id = save_progress(
                                     user_id=st.session_state.user.id,
                                     goal_text=goal,
@@ -683,6 +820,6 @@ else:
                                 )
                                 st.session_state.active_goal_id = new_id
                                 st.session_state.active_goal_text = goal
-                                st.success("Goal saved! You'll find it in 'My Saved Goals' next time you log in.")
+                                st.success(t("goal_saved"))
                         else:
-                            st.info("Log in to save this roadmap and track your progress across sessions.")
+                            st.info(t("login_to_save"))
