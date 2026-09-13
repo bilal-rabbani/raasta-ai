@@ -819,7 +819,8 @@ with st.sidebar:
         if auth_mode == t("sign_up"):
             if st.button(t("create_account")):
                 try:
-                    pass
+                    sign_up(email, password)
+                    st.success(t("account_created"))
                 except Exception as e:
                     print(f"[RAASTA][signup_error] {e}")
                     st.error(t("signup_failed"))
@@ -827,7 +828,9 @@ with st.sidebar:
         else:
             if st.button(t("log_in")):
                 try:
-                    pass
+                    result = sign_in(email, password)
+                    st.session_state.user = result.user
+                    st.rerun()
                 except Exception as e:
                     print(f"[RAASTA][login_error] {e}")
                     st.error(t("login_failed"))
@@ -1022,5 +1025,6 @@ else:
                                     st.session_state.active_goal_id = new_id
                                     st.session_state.active_goal_text = goal
                                     st.success(t("goal_saved"))
-                                    st.divider()
+
+st.divider()
 st.caption(t("footer_disclaimer"))
