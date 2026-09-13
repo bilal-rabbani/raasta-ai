@@ -16,7 +16,9 @@ st.write(
     "in Pakistan."
 )
 
-# ---------- Scope Detector ----------
+# ============================================================
+# SCOPE DETECTOR
+# ============================================================
 GOVERNMENT_KEYWORDS = [
     "register", "registration", "license", "licence", "permit", "tax",
     "fbr", "secp", "nadra", "business", "company", "firm", "authority",
@@ -36,7 +38,9 @@ def mentions_business(text: str) -> bool:
     text_lower = text.lower()
     return any(word in text_lower for word in business_words)
 
-# ---------- Tiny Practice Knowledge Base ----------
+# ============================================================
+# TINY PRACTICE KNOWLEDGE BASE
+# ============================================================
 KNOWLEDGE_BASE = [
     {
         "institution": "SECP (Securities and Exchange Commission of Pakistan)",
@@ -140,7 +144,9 @@ KNOWLEDGE_BASE = [
     },
 ]
 
-# ---------- Load embedding model (cached so it only loads once) ----------
+# ============================================================
+# EMBEDDING MODEL (cached)
+# ============================================================
 @st.cache_resource
 def load_model():
     return SentenceTransformer("all-MiniLM-L6-v2")
@@ -153,23 +159,163 @@ def build_embeddings(_model):
 model = load_model()
 doc_embeddings = build_embeddings(model)
 
-def retrieve_relevant_docs(query: str, structure: str = None, top_k: int = 6):
+
+# ============================================================
+# AGENT 1: INTENT & PROFILE AGENT
+# ------------------------------------------------------------
+# Responsibility: understand the goal, detect if a business is
+# involved, and figure out what's still missing (e.g. structure).
+# ============================================================
+def intent_profile_agent(user_goal: str, business_structure: str = None) -> dict:
+    profile = {
+        "goal_text": user_goal,
+        "in_scope": is_government_related(user_goal),
+        "is_business_related": mentions_business(user_goal),
+        "business_structure": business_structure,
+        "missing": [],
+    }
+    if profile["is_business_related"] and not business_structure:
+        profile["missing"].append("business_structure")
+    return profile
+
+
+# ============================================================
+# AGENT 2: GOVERNMENT RESEARCH & RETRIEVAL AGENT
+# ------------------------------------------------------------
+# Responsibility: search the RAG knowledge base and return
+# raw evidence (documents), filtered by known context.
+# ============================================================
+def research_agent(query: str, structure: str = None, top_k: int = 6) -> list:
     query_embedding = model.encode([query])[0]
     similarities = np.dot(doc_embeddings, query_embedding) / (
         np.linalg.norm(doc_embeddings, axis=1) * np.linalg.norm(query_embedding)
     )
     ranked_indices = np.argsort(similarities)[::-1]
 
-    results = []
+    evidence = []
     for i in ranked_indices:
         doc = KNOWLEDGE_BASE[i]
         if structure and structure not in doc["applies_to_structure"]:
             continue
-        results.append(doc)
-        if len(results) >= top_k:
+        evidence.append(doc)
+        if len(evidence) >= top_k:
             break
-    return results
+    return evidence
 
+
+# ============================================================
+# AGENT 3: REQUIREMENT ANALYSIS AGENT
+# ------------------------------------------------------------
+# Responsibility: decide which retrieved evidence is actually
+# applicable and bucket it into mandatory / conditional / optional.
+# (In this practice KB, classification is pre-tagged; a real
+# version would have the LLM reason about applicability here.)
+# ============================================================
+def requirement_agent(evidence: list) -> dict:
+    return {
+        "mandatory": [d for d in evidence if d["classification"] == "mandatory"],
+        "conditional": [d for d in evidence if d["classification"] == "conditional"],
+        "optional": [d for d in evidence if d["classification"] == "optional"],
+    }
+
+
+# ============================================================
+# AGENT 4: VERIFICATION AGENT
+# ------------------------------------------------------------
+# Responsibility: check source reliability/freshness and flag
+# anything that shouldn't be presented with full confidence.
+# ============================================================
+WEAK_STATUSES = {"Official but date unclear", "Secondary", "Unverified", "Potentially outdated"}
+
+def verification_agent(requirements: dict) -> dict:
+    verified = {"mandatory": [], "conditional": [], "optional": [], "flags": []}
+    for bucket in ["mandatory", "conditional", "optional"]:
+        for doc in requirements[bucket]:
+            doc = dict(doc)  # don't mutate the shared KB
+            if doc["verification_status"] in WEAK_STATUSES:
+                doc["flagged"] = True
+                verified["flags"].append(
+                    f"{doc['title']} ({doc['institution']}) has status "
+                    f"'{doc['verification_status']}' — treat with caution."
+                )
+            else:
+                doc["flagged"] = False
+            verified[bucket].append(doc)
+    return verified
+
+
+# ============================================================
+# AGENT 5: ROADMAP AGENT
+# ------------------------------------------------------------
+# Responsibility: turn verified requirements into an ordered
+# sequence of steps, and surface the single "next step".
+# ============================================================
+def roadmap_agent(verified: dict) -> dict:
+    steps = []
+    step_num = 1
+
+    # Mandatory items always come first — they block progress.
+    for doc in verified["mandatory"]:
+        steps.append({
+            "number": step_num,
+            "title": doc["title"],
+            "institution": doc["institution"],
+            "status": "pending",
+            "type": "mandatory",
+        })
+        step_num += 1
+
+    # Conditional items come next, clearly labeled as "if applicable".
+    for doc in verified["conditional"]:
+        steps.append({
+            "number": step_num,
+            "title": f"{doc['title']} (if applicable)",
+            "institution": doc["institution"],
+            "status": "pending",
+            "type": "conditional",
+        })
+        step_num += 1
+
+    next_step = steps[0]["title"] if steps else None
+
+    return {"steps": steps, "next_step": next_step}
+
+
+# ============================================================
+# ORCHESTRATOR
+# ------------------------------------------------------------
+# Responsibility: run the agent pipeline in order and assemble
+# the final state object the UI renders from.
+# ============================================================
+def orchestrator(user_goal: str, business_structure: str = None) -> dict:
+    state = {
+        "user_goal": user_goal,
+        "business_structure": business_structure,
+        "profile": None,
+        "evidence": [],
+        "requirements": {},
+        "verified": {},
+        "roadmap": {},
+    }
+
+    state["profile"] = intent_profile_agent(user_goal, business_structure)
+
+    if not state["profile"]["in_scope"]:
+        return state  # short-circuit — no need to run research/etc.
+
+    if state["profile"]["missing"]:
+        return state  # need the user to answer first
+
+    state["evidence"] = research_agent(user_goal, structure=business_structure)
+    state["requirements"] = requirement_agent(state["evidence"])
+    state["verified"] = verification_agent(state["requirements"])
+    state["roadmap"] = roadmap_agent(state["verified"])
+    return state
+
+
+# ============================================================
+# RENDER HELPERS
+# ============================================================
 def render_source_expander(doc):
     with st.expander(f"📄 {doc['title']} ({doc['institution']})"):
         st.write(f"**Institution:** {doc['institution']}")
@@ -181,13 +327,29 @@ def render_source_expander(doc):
         st.write(f"**Retrieved:** {date.today().isoformat()}")
 
 def render_requirement(doc):
-    st.markdown(f"**{doc['title']}** — *{doc['institution']}*")
+    flag = " ⚠️" if doc.get("flagged") else ""
+    st.markdown(f"**{doc['title']}**{flag} — *{doc['institution']}*")
     st.write(doc["text"])
     st.caption(f"Why this applies: {doc['reason']}")
     render_source_expander(doc)
     st.divider()
 
-# ---------- Session State ----------
+def render_roadmap(roadmap: dict):
+    st.subheader("🗺️ Step-by-Step Roadmap")
+    if not roadmap["steps"]:
+        st.write("No roadmap could be generated for this query.")
+        return
+    for step in roadmap["steps"]:
+        icon = "🔲" if step["type"] == "mandatory" else "◽"
+        st.write(f"{icon} **Step {step['number']}: {step['title']}** — {step['institution']}")
+
+    st.subheader("👉 Your Next Step")
+    st.success(roadmap["next_step"])
+
+
+# ============================================================
+# SESSION STATE
+# ============================================================
 if "user_goal" not in st.session_state:
     st.session_state.user_goal = ""
 if "business_structure" not in st.session_state:
@@ -195,7 +357,9 @@ if "business_structure" not in st.session_state:
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
 
-# ---------- UI ----------
+# ============================================================
+# UI
+# ============================================================
 user_goal_input = st.text_area(
     "What do you want to accomplish?",
     placeholder="Example: I want to start a construction business in Lahore.",
@@ -212,76 +376,85 @@ if st.session_state.submitted:
 
     if not goal.strip():
         st.warning("Please tell us what you want to accomplish.")
-    elif not is_government_related(goal):
-        st.info(
-            "RAASTA AI is designed to help with government procedures and "
-            "services in Pakistan. Please ask about a government "
-            "registration, license, permit, application, tax, service, "
-            "or other government procedure."
-        )
     else:
-        st.success("This looks like a government-related request.")
-        st.write("You asked:")
-        st.write(goal)
+        # Run Intent/Profile agent first, just to check scope + missing info
+        preview_profile = intent_profile_agent(goal, st.session_state.business_structure)
 
-        if mentions_business(goal):
-            st.subheader("One quick question")
-            st.write("What business structure are you planning to use?")
+        if not preview_profile["in_scope"]:
+            st.info(
+                "RAASTA AI is designed to help with government procedures and "
+                "services in Pakistan. Please ask about a government "
+                "registration, license, permit, application, tax, service, "
+                "or other government procedure."
+            )
+        else:
+            st.success("This looks like a government-related request.")
+            st.write("You asked:")
+            st.write(goal)
 
-            with st.expander("Why are you asking me this?"):
-                st.write(
-                    "Your business structure changes which registrations "
-                    "are required. For example, a sole proprietorship does "
-                    "not require SECP registration, but a company does."
+            if "business_structure" in preview_profile["missing"]:
+                st.subheader("One quick question")
+                st.write("What business structure are you planning to use?")
+
+                with st.expander("Why are you asking me this?"):
+                    st.write(
+                        "Your business structure changes which registrations "
+                        "are required. For example, a sole proprietorship does "
+                        "not require SECP registration, but a company does."
+                    )
+
+                structure_choice = st.radio(
+                    "Choose one:",
+                    options=["Sole Proprietorship", "Partnership", "Company"],
+                    index=None,
+                    key="structure_radio",
                 )
 
-            structure_choice = st.radio(
-                "Choose one:",
-                options=["Sole Proprietorship", "Partnership", "Company"],
-                index=None,
-                key="structure_radio",
-            )
+                structure_map = {
+                    "Sole Proprietorship": "sole_proprietorship",
+                    "Partnership": "partnership",
+                    "Company": "company",
+                }
 
-            structure_map = {
-                "Sole Proprietorship": "sole_proprietorship",
-                "Partnership": "partnership",
-                "Company": "company",
-            }
+                if structure_choice:
+                    st.session_state.business_structure = structure_map[structure_choice]
 
-            if structure_choice:
-                st.session_state.business_structure = structure_map[structure_choice]
-
-        structure = st.session_state.business_structure
-
-        if mentions_business(goal) and not structure:
-            st.info("Please select a business structure above to see personalized results.")
-        else:
-            results = retrieve_relevant_docs(goal, structure=structure)
-
-            mandatory = [d for d in results if d["classification"] == "mandatory"]
-            conditional = [d for d in results if d["classification"] == "conditional"]
-            optional = [d for d in results if d["classification"] == "optional"]
-
-            if structure:
-                st.caption(f"Personalized for: {structure.replace('_', ' ').title()}")
-
-            st.subheader("✅ Mandatory Requirements")
-            if mandatory:
-                for doc in mandatory:
-                    render_requirement(doc)
+            if "business_structure" in preview_profile["missing"] and not st.session_state.business_structure:
+                st.info("Please select a business structure above to see personalized results.")
             else:
-                st.write("No mandatory requirements found for this query.")
+                # ---- Full pipeline via the Orchestrator ----
+                state = orchestrator(goal, st.session_state.business_structure)
+                verified = state["verified"]
+                roadmap = state["roadmap"]
 
-            st.subheader("⚠️ Conditional Requirements")
-            if conditional:
-                for doc in conditional:
-                    render_requirement(doc)
-            else:
-                st.write("No conditional requirements found for this query.")
+                if state["business_structure"]:
+                    st.caption(f"Personalized for: {state['business_structure'].replace('_', ' ').title()}")
 
-            st.subheader("ℹ️ Optional")
-            if optional:
-                for doc in optional:
-                    render_requirement(doc)
-            else:
-                st.write("No optional items found for this query.")
+                if verified.get("flags"):
+                    with st.expander("⚠️ Verification notes"):
+                        for f in verified["flags"]:
+                            st.write(f"- {f}")
+
+                st.subheader("✅ Mandatory Requirements")
+                if verified.get("mandatory"):
+                    for doc in verified["mandatory"]:
+                        render_requirement(doc)
+                else:
+                    st.write("No mandatory requirements found for this query.")
+
+                st.subheader("⚠️ Conditional Requirements")
+                if verified.get("conditional"):
+                    for doc in verified["conditional"]:
+                        render_requirement(doc)
+                else:
+                    st.write("No conditional requirements found for this query.")
+
+                st.subheader("ℹ️ Optional")
+                if verified.get("optional"):
+                    for doc in verified["optional"]:
+                        render_requirement(doc)
+                else:
+                    st.write("No optional items found for this query.")
+
+                if roadmap:
+                    render_roadmap(roadmap)
