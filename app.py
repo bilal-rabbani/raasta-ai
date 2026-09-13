@@ -10,6 +10,17 @@ st.set_page_config(
     page_icon="🛣️",
     layout="centered"
 )
+st.markdown("""
+<style>
+@media (max-width: 640px) {
+    .block-container { padding: 1rem 0.75rem !important; }
+    h1 { font-size: 1.5rem !important; }
+    h2, h3 { font-size: 1.15rem !important; }
+}
+div[data-testid="stCheckbox"] { min-height: 32px; }
+div.stButton > button { min-height: 44px; }
+</style>
+""", unsafe_allow_html=True)
 
 # ============================================================
 # TRANSLATIONS (UI text)
@@ -95,6 +106,15 @@ TRANSLATIONS = {
         "en": "A plain-language AI summary isn't available right now, but the verified information above is complete and accurate.",
         "ur": "اس وقت اے آئی خلاصہ دستیاب نہیں، لیکن اوپر دی گئی تصدیق شدہ معلومات مکمل اور درست ہیں۔",
     },
+        "error_generic": {"en": "Something went wrong. Please try again in a moment.", "ur": "کچھ غلط ہو گیا۔ براہ کرم دوبارہ کوشش کریں۔"},
+    "loading_model": {"en": "Warming up RAASTA AI...", "ur": "راستہ اے آئی کو تیار کیا جا رہا ہے..."},
+    "researching": {"en": "Researching applicable requirements...", "ur": "لاگو تقاضوں کی تحقیق کی جا رہی ہے..."},
+    "generating_summary": {"en": "Generating plain-language summary...", "ur": "سادہ خلاصہ تیار کیا جا رہا ہے..."},
+    "goal_too_long": {"en": "Please shorten your request (max 500 characters).", "ur": "براہ کرم اپنی درخواست مختصر کریں (زیادہ سے زیادہ 500 حروف)۔"},
+    "try_example": {"en": "🎯 Try an example", "ur": "🎯 مثال آزمائیں"},
+    "footer_disclaimer": {"en": "RAASTA AI is a prototype and does not constitute legal advice. Always confirm procedures with the relevant government institution.", "ur": "راستہ اے آئی ایک نمونہ ہے اور یہ قانونی مشورہ نہیں۔ ہمیشہ متعلقہ سرکاری ادارے سے تصدیق کریں۔"},
+    "auth_mode_label": {"en": "Choose login or sign up", "ur": "لاگ ان یا سائن اپ منتخب کریں"},
+    "roadmap_step_checkbox_label": {"en": "Mark step complete", "ur": "مرحلہ مکمل نشان زد کریں"},
 }
 
 def t(key: str) -> str:
@@ -208,6 +228,15 @@ def build_summary_prompt(goal: str, structure: str, verified: dict) -> str:
         "any requirement not listed above."
     )
     return "\n".join(lines)
+  def get_cached_summary(goal: str, structure: str, verified: dict) -> dict:
+    cache_key = f"{goal}::{structure}"
+    cache = st.session_state.setdefault("summary_cache", {})
+    if cache_key in cache:
+        return cache[cache_key]
+    with st.spinner(t("generating_summary")):
+        result = llm_router(build_summary_prompt(goal, structure, verified))
+    cache[cache_key] = result
+    return result
 
 # ============================================================
 # SCOPE DETECTOR
@@ -410,8 +439,9 @@ def build_embeddings(_model):
     texts = [doc["text"] for doc in KNOWLEDGE_BASE]
     return _model.encode(texts)
 
-model = load_model()
-doc_embeddings = build_embeddings(model)
+with st.spinner(t("loading_model")):
+    model = load_model()
+    doc_embeddings = build_embeddings(model)
 
 
 # ============================================================
@@ -589,7 +619,7 @@ def orchestrator(user_goal: str, business_structure: str = None) -> dict:
 # ============================================================
 # PERSISTENCE LAYER (Supabase)
 # ============================================================
-def save_progress(user_id: str, goal_text: str, business_structure: str, roadmap: dict, existing_id: str = None):
+def save_progress(user_id, goal_text, business_structure, roadmap, existing_id=None):
     payload = {
         "user_id": user_id,
         "goal_text": goal_text,
@@ -597,23 +627,32 @@ def save_progress(user_id: str, goal_text: str, business_structure: str, roadmap
         "roadmap_json": roadmap,
         "updated_at": datetime.utcnow().isoformat(),
     }
-    if existing_id:
-        supabase.table("raasta_progress").update(payload).eq("id", existing_id).execute()
-        return existing_id
-    else:
-        result = supabase.table("raasta_progress").insert(payload).execute()
-        return result.data[0]["id"] if result.data else None
+    try:
+        if existing_id:
+            supabase.table("raasta_progress").update(payload).eq("id", existing_id).execute()
+            return existing_id, None
+        else:
+            result = supabase.table("raasta_progress").insert(payload).execute()
+            new_id = result.data[0]["id"] if result.data else None
+            return new_id, None
+    except Exception as e:
+        print(f"[RAASTA][save_progress_error] {e}")
+        return existing_id, str(e)
 
 
-def load_user_goals(user_id: str) -> list:
-    result = (
-        supabase.table("raasta_progress")
-        .select("*")
-        .eq("user_id", user_id)
-        .order("updated_at", desc=True)
-        .execute()
-    )
-    return result.data or []
+def load_user_goals(user_id):
+    try:
+        result = (
+            supabase.table("raasta_progress")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("updated_at", desc=True)
+            .execute()
+        )
+        return result.data or [], None
+    except Exception as e:
+        print(f"[RAASTA][load_goals_error] {e}")
+        return [], str(e)]
 
 
 def compute_progress_percent(roadmap: dict) -> int:
@@ -688,7 +727,7 @@ def render_roadmap_with_progress(roadmap: dict, editable: bool = True):
         with col1:
             if editable and step["type"] != "decision":
                 st.checkbox(
-                    "",
+                    f"{t('roadmap_step_checkbox_label')}: {step['title']}",
                     value=(step["status"] == "done"),
                     key=f"step_{step['step_id']}",
                     label_visibility="collapsed",
@@ -763,31 +802,21 @@ with st.sidebar:
     st.header(t("account_header"))
 
     if st.session_state.user is None:
-        auth_mode = st.radio("", [t("log_in"), t("sign_up")], horizontal=True, label_visibility="collapsed")
+        auth_mode = st.radio(t("auth_mode_label"), [t("log_in"), t("sign_up")], horizontal=True, label_visibility="collapsed")
         email = st.text_input(t("email"))
         password = st.text_input(t("password"), type="password")
 
         if auth_mode == t("sign_up"):
             if st.button(t("create_account")):
                 try:
-                    res = sign_up(email, password)
-                    if res.user:
-                        st.success(t("account_created"))
-                    else:
-                        st.error(t("signup_failed"))
-                except Exception as e:
-                    st.error(f"{t('signup_failed')} ({e})")
+                    except Exception as e:
+                    print(f"[RAASTA][signup_error] {e}")
+                    st.error(t("signup_failed"))
         else:
             if st.button(t("log_in")):
-                try:
-                    res = sign_in(email, password)
-                    if res.user:
-                        st.session_state.user = res.user
-                        st.rerun()
-                    else:
-                        st.error(t("login_failed"))
                 except Exception as e:
-                    st.error(f"{t('login_failed')} ({e})")
+                    print(f"[RAASTA][login_error] {e}")
+                    st.error(t("login_failed"))
     else:
         st.write(f"{t('logged_in_as')} **{st.session_state.user.email}**")
         if st.button(t("log_out")):
@@ -799,7 +828,9 @@ with st.sidebar:
 
         st.divider()
         st.subheader(t("my_saved_goals"))
-        saved_goals = load_user_goals(st.session_state.user.id)
+        saved_goals, load_err = load_user_goals(st.session_state.user.id)
+        if load_err:
+            st.error(t("error_generic"))
         if not saved_goals:
             st.caption(t("no_saved_goals"))
         for g in saved_goals:
@@ -828,14 +859,17 @@ if st.session_state.active_roadmap and not st.session_state.submitted:
     updated_roadmap = render_roadmap_with_progress(st.session_state.active_roadmap, editable=True)
 
     if st.button(t("save_progress")):
-        save_progress(
+        _, save_err = save_progress(
             user_id=st.session_state.user.id,
             goal_text=st.session_state.active_goal_text,
             business_structure=st.session_state.business_structure,
             roadmap=updated_roadmap,
             existing_id=st.session_state.active_goal_id,
         )
-        st.success(t("progress_saved"))
+        if save_err:
+            st.error(t("error_generic"))
+        else:
+            st.success(t("progress_saved"))
 
     if st.button(t("start_new_goal")):
         st.session_state.active_roadmap = None
@@ -843,10 +877,15 @@ if st.session_state.active_roadmap and not st.session_state.submitted:
         st.rerun()
 
 else:
+        if st.button(t("try_example")):
+        st.session_state.user_goal = "I want to start a construction business in Lahore."
+        st.rerun()
+
     user_goal_input = st.text_area(
         t("goal_input_label"),
         placeholder=t("goal_input_placeholder"),
         value=st.session_state.user_goal,
+        max_chars=500,
     )
 
     if st.button(t("ask_button")):
@@ -895,7 +934,13 @@ else:
                 if "business_structure" in preview_profile["missing"] and not st.session_state.business_structure:
                     st.info(t("select_structure_prompt"))
                 else:
-                    state = orchestrator(goal, st.session_state.business_structure)
+                    try:
+                        with st.spinner(t("researching")):
+                            state = orchestrator(goal, st.session_state.business_structure)
+                    except Exception as e:
+                        print(f"[RAASTA][orchestrator_error] {e}")
+                        st.error(t("error_generic"))
+                        st.stop()
                     verified = state["verified"]
                     roadmap = state["roadmap"]
 
@@ -908,7 +953,7 @@ else:
                                 st.write(f"- {f}")
 
                     # ---------- Part 11: AI plain-language summary ----------
-                    llm_result = llm_router(build_summary_prompt(goal, state["business_structure"], verified))
+                    llm_result = get_cached_summary(goal, state["business_structure"], verified)
                     st.subheader(t("ai_summary_header"))
                     if llm_result["success"]:
                         st.info(llm_result["text"])
@@ -939,14 +984,17 @@ else:
 
                         if st.session_state.user is not None:
                             if st.button(t("save_goal_button")):
-                                new_id = save_progress(
+                                new_id, save_err = save_progress(
                                     user_id=st.session_state.user.id,
                                     goal_text=goal,
                                     business_structure=state["business_structure"],
                                     roadmap=updated_roadmap,
                                 )
-                                st.session_state.active_goal_id = new_id
-                                st.session_state.active_goal_text = goal
-                                st.success(t("goal_saved"))
-                        else:
-                            st.info(t("login_to_save"))
+                                if save_err:
+                                    st.error(t("error_generic"))
+                                else:
+                                    st.session_state.active_goal_id = new_id
+                                    st.session_state.active_goal_text = goal
+                                    st.success(t("goal_saved"))
+                                    st.divider()
+st.caption(t("footer_disclaimer"))
