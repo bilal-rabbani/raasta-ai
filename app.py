@@ -654,7 +654,7 @@ def load_user_goals(user_id):
         return result.data or [], None
     except Exception as e:
         print(f"[RAASTA][load_goals_error] {e}")
-        return [], str(e)]
+        return [], str(e)
 
 
 def compute_progress_percent(roadmap: dict) -> int:
