@@ -1,4 +1,3 @@
-
 import json
 import pickle
 from pathlib import Path
@@ -52,7 +51,8 @@ def load_new_sources_metadata():
     for file_path in sorted(NEW_RAW_DIR.iterdir()):
         if not file_path.is_file():
             continue
-        source_type = "pdf" if file_path.suffix.lower() == ".pdf" else "html"
+        suffix = file_path.suffix.lower()
+        source_type = "pdf" if suffix == ".pdf" else ("md" if suffix == ".md" else "html")
         inferred.append({
             "source_id": file_path.stem,
             "institution": "Unknown",
@@ -86,6 +86,16 @@ def extract_html(file_path):
     return clean_text(text)
 
 
+def extract_md(file_path):
+    """
+    Markdown / plain-text files need no HTML stripping — just read and
+    run through the same whitespace/control-character cleanup.
+    """
+    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        text = f.read()
+    return clean_text(text)
+
+
 def extract_pdf(file_path):
     pages_text = []
     with pdfplumber.open(file_path) as pdf:
@@ -116,7 +126,12 @@ def clean_new_sources(new_sources):
     for source in new_sources:
         source_id = source["source_id"]
         source_type = source.get("source_type", "html").lower()
-        extension = ".pdf" if source_type == "pdf" else ".html"
+        if source_type == "pdf":
+            extension = ".pdf"
+        elif source_type == "md":
+            extension = ".md"
+        else:
+            extension = ".html"
         raw_file = NEW_RAW_DIR / f"{source_id}{extension}"
         cleaned_file = CLEANED_DIR / f"{source_id}.txt"
 
@@ -129,7 +144,12 @@ def clean_new_sources(new_sources):
             continue
 
         print(f"Cleaning: {raw_file.name}")
-        text = extract_pdf(raw_file) if extension == ".pdf" else extract_html(raw_file)
+        if extension == ".pdf":
+            text = extract_pdf(raw_file)
+        elif extension == ".md":
+            text = extract_md(raw_file)
+        else:
+            text = extract_html(raw_file)
 
         with open(cleaned_file, "w", encoding="utf-8") as f:
             f.write(text)
