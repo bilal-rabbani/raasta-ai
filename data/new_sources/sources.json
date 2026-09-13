@@ -2,17 +2,21 @@
   {
     "source_id": "construction company in peshawar",
     "jurisdiction": "kpk"
+    "source_type": "md"
   },
   {
     "source_id": "construction company in lahore",
     "jurisdiction": "Punjab"
+    "source_type": "md"
   },
   {
    "source_id": "construction company in quetta",
     "jurisdiction": "Baluchistan"
+    "source_type": "md"
   },
   {
     "source_id": "construction company in quetta",
     "jurisdiction": "Baluchistan"
+    "source_type": "md"
   }
 ]
