@@ -462,6 +462,8 @@ def intent_profile_agent(user_goal: str, business_structure: str = None) -> dict
     return profile
 
 
+MIN_SIMILARITY = 0.3  # tune this — higher = stricter matching
+
 def research_agent(query: str, structure: str = None, top_k: int = 6) -> list:
     query_embedding = model.encode([query])[0]
     similarities = np.dot(doc_embeddings, query_embedding) / (
@@ -471,6 +473,8 @@ def research_agent(query: str, structure: str = None, top_k: int = 6) -> list:
 
     evidence = []
     for i in ranked_indices:
+        if similarities[i] < MIN_SIMILARITY:
+            break  # everything after this is even less relevant, stop here
         doc = KNOWLEDGE_BASE[i]
         if structure and structure not in doc["applies_to_structure"]:
             continue
